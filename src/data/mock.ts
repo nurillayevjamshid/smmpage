@@ -86,3 +86,26 @@ export const mockRecentActivity = [
     status: "success",
   },
 ];
+
+export const mockPosts = [
+  {
+    id: "post1",
+    projectId: "p1",
+    title: "Launch Announcement",
+    content: "We are excited to announce the launch of our new product!",
+    status: "Published",
+    scheduledAt: "2024-03-20 10:00",
+    media: ["https://picsum.photos/800/600?random=11"],
+    platforms: ["instagram", "telegram"],
+  },
+  {
+    id: "post2",
+    projectId: "p1",
+    title: "Feature Spotlight",
+    content: "Check out this amazing new feature we just added.",
+    status: "Scheduled",
+    scheduledAt: "2024-03-25 15:00",
+    media: ["https://picsum.photos/800/600?random=12"],
+    platforms: ["instagram"],
+  }
+];
