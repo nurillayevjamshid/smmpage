@@ -1,39 +1,70 @@
-import { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
-import { mockProjects } from "@/data/mock";
+import { useAuth } from "@/hooks/useAuth";
+import { useProject } from "@/hooks/useProject";
+import { postService } from "@/services/post.service";
 import { Button } from "@/components/ui/Button";
 import { Card, CardContent } from "@/components/ui/Card";
-import { Image as ImageIcon, Send, Calendar, Clock, Heart, MessageCircle, Bookmark, MoreHorizontal, ArrowLeft, LayoutGrid, CheckCircle2 } from "lucide-react";
+import { Image as ImageIcon, Send, ArrowLeft, LayoutGrid, CheckCircle2, MoreHorizontal, Heart, MessageCircle, Bookmark } from "lucide-react";
 import { cn } from "@/lib/utils";
 import toast from "react-hot-toast";
 
 export default function ComposePost() {
   const { id } = useParams();
   const navigate = useNavigate();
-  const project = mockProjects.find((p) => p.id === id);
+  const { user } = useAuth();
+  const { project, loading } = useProject(id);
 
   const [caption, setCaption] = useState("");
-  const [media, setMedia] = useState<string | null>(null);
-  const [platforms, setPlatforms] = useState<string[]>(project?.platforms || []);
-  const [activePreview, setActivePreview] = useState<string>(platforms[0] || "instagram");
+  const [mediaPreview, setMediaPreview] = useState<string | null>(null);
+  const [mediaFile, setMediaFile] = useState<File | null>(null);
+  const [platforms, setPlatforms] = useState<string[]>([]);
+  const [isPublishing, setIsPublishing] = useState(false);
+  const [activePreview, setActivePreview] = useState<string>("instagram");
 
-  if (!project) return <div>Project not found</div>;
+  // Load project platforms once project is loaded
+  useEffect(() => {
+    if (project?.platforms) {
+      setPlatforms(project.platforms);
+      setActivePreview(project.platforms[0] || "instagram");
+    }
+  }, [project]);
+
+  if (loading) return <div className="p-8 animate-pulse text-center">Loading Project...</div>;
+  if (!project) return <div className="p-8 text-center text-rose-500 font-bold">Project not found</div>;
 
   const handleMediaUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
+      setMediaFile(file);
       const url = URL.createObjectURL(file);
-      setMedia(url);
+      setMediaPreview(url);
     }
   };
 
-  const handlePublish = () => {
-    if (!caption && !media) {
+  const handlePublish = async () => {
+    if (!user) return;
+    if (!caption && !mediaFile) {
       toast.error("Please add some text or media");
       return;
     }
-    toast.success("Content deployed successfully!");
-    setTimeout(() => navigate(`/projects/${id}`), 1500);
+    
+    setIsPublishing(true);
+    try {
+      await postService.createPost(user.id, id!, {
+        caption,
+        platforms,
+        status: "published"
+      }, mediaFile || undefined);
+      
+      toast.success("Content deployed successfully!");
+      setTimeout(() => navigate(`/projects/${id}`), 1000);
+    } catch (error) {
+      toast.error("Deployment failed");
+      console.error(error);
+    } finally {
+      setIsPublishing(false);
+    }
   };
 
   const togglePlatform = (p: string) => {
@@ -113,11 +144,11 @@ export default function ComposePost() {
                    Visual Branding Assets
                 </label>
                 <div className="border-2 border-dashed border-slate-100 bg-slate-50/30 rounded-[2rem] sm:rounded-[2.5rem] p-6 sm:p-12 text-center hover:bg-slate-50 transition-all relative overflow-hidden group active:scale-[0.99] hover:border-indigo-200">
-                  {media ? (
+                  {mediaPreview ? (
                     <div className="relative w-full aspect-video rounded-2xl overflow-hidden shadow-2xl">
-                      <img src={media} alt="Preview" className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700 font-bold" />
+                      <img src={mediaPreview} alt="Preview" className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700 font-bold" />
                       <div className="absolute inset-0 bg-slate-900/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center backdrop-blur-sm">
-                        <button onClick={() => setMedia(null)} className="bg-white text-rose-600 px-6 py-3 rounded-2xl font-black text-xs uppercase tracking-widest shadow-xl active:scale-90 transition-all">Destruct Asset</button>
+                        <button onClick={() => { setMediaPreview(null); setMediaFile(null); }} className="bg-white text-rose-600 px-6 py-3 rounded-2xl font-black text-xs uppercase tracking-widest shadow-xl active:scale-90 transition-all">Destruct Asset</button>
                       </div>
                     </div>
                   ) : (
@@ -199,8 +230,8 @@ export default function ComposePost() {
                         </div>
                         
                         <div className="aspect-square bg-slate-100 flex items-center justify-center relative overflow-hidden group/img">
-                          {media ? (
-                            <img src={media} alt="Post" className="w-full h-full object-cover group-hover/img:scale-110 transition-transform duration-700" />
+                          {mediaPreview ? (
+                            <img src={mediaPreview} alt="Post" className="w-full h-full object-cover group-hover/img:scale-110 transition-transform duration-700" />
                           ) : (
                             <ImageIcon size={48} className="text-slate-200" />
                           )}
@@ -241,8 +272,8 @@ export default function ComposePost() {
 
                         <div className="flex-1 p-5 flex flex-col justify-end space-y-4">
                           <div className="bg-white rounded-[1.25rem] rounded-bl-none p-2 shadow-2xl animate-in slide-in-from-left-2 duration-500">
-                            {media && (
-                              <img src={media} alt="Post" className="w-full rounded-xl mb-2 object-cover shadow-sm font-bold" />
+                            {mediaPreview && (
+                              <img src={mediaPreview} alt="Post" className="w-full rounded-xl mb-2 object-cover shadow-sm font-bold" />
                             )}
                             <p className="text-[15px] leading-relaxed text-slate-900 whitespace-pre-wrap px-2 pb-2 font-medium tracking-tight">
                               {caption || "Awaiting message packet..."}

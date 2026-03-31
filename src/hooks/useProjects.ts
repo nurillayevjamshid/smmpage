@@ -1,7 +1,7 @@
-import { useState, useEffect, useCallback } from 'react';
-import { Project } from '@/types';
-import { projectService } from '@/services/project.service';
-import toast from 'react-hot-toast';
+import { useState, useEffect, useCallback } from "react";
+import { Project } from "@/types";
+import { projectService } from "@/services/project.service";
+import toast from "react-hot-toast";
 
 export function useProjects(userId: string | undefined) {
   const [projects, setProjects] = useState<Project[]>([]);
@@ -30,12 +30,12 @@ export function useProjects(userId: string | undefined) {
     fetchProjects();
   }, [fetchProjects]);
 
-  const createProject = async (data: Omit<Project, 'id' | 'userId' | 'createdAt' | 'platforms'>) => {
+  const createProject = async (data: Partial<Project>) => {
     if (!userId) return;
     try {
       const newProject = await projectService.createProject(userId, data);
-      setProjects(prev => [...prev, newProject]);
-      toast.success('Project created successfully');
+      setProjects(prev => [newProject, ...prev]);
+      toast.success("Project created successfully");
       return newProject;
     } catch (err: any) {
       toast.error(err.message);
@@ -46,13 +46,12 @@ export function useProjects(userId: string | undefined) {
   const deleteProject = async (projectId: string) => {
     if (!userId) return;
     try {
-      // Optimistic UI
+      // Optimistic update
       setProjects(prev => prev.filter(p => p.id !== projectId));
       await projectService.deleteProject(userId, projectId);
-      toast.success('Project deleted');
+      toast.success("Project deleted");
     } catch (err: any) {
-      // Revert optimistic update
-      fetchProjects();
+      fetchProjects(); // Recover
       toast.error(err.message);
       throw err;
     }

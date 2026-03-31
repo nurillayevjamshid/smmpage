@@ -1,10 +1,11 @@
-import { useState } from "react";
+import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { LayoutDashboard, Lock, Mail, ArrowRight, Github } from "lucide-react";
 import { Button } from "@/components/ui/Button";
 import { Input } from "@/components/ui/Input";
 import { Card } from "@/components/ui/Card";
 import { toast } from "react-hot-toast";
+import { loginWithGoogle } from "@/services/auth";
 
 export default function Login() {
   const [email, setEmail] = useState("");
@@ -21,6 +22,17 @@ export default function Login() {
     }
   };
 
+  const handleGoogleLogin = async () => {
+    try {
+      const loadingToast = toast.loading("Establishing connection with Google...");
+      await loginWithGoogle();
+      toast.success("Successfully authenticated!", { id: loadingToast });
+      navigate("/dashboard");
+    } catch (error: any) {
+      toast.error(error.message || "Failed to authenticate");
+    }
+  };
+
   return (
     <div className="min-h-screen bg-slate-50 flex items-center justify-center p-4 sm:p-6 lg:p-8 animate-in fade-in duration-1000 overflow-hidden relative">
       
@@ -33,7 +45,7 @@ export default function Login() {
         {/* Brand Header */}
         <div className="text-center space-y-6">
           <div className="inline-flex p-5 sm:p-6 bg-indigo-600 rounded-[2rem] shadow-2xl shadow-indigo-200/50 items-center justify-center text-white scale-110 sm:scale-125 mb-4 sm:mb-8 active:scale-95 transition-transform duration-500 hover:rotate-12">
-            <LayoutDashboard size={40} sm:size={48} strokeWidth={2.5} />
+            <LayoutDashboard size={40} />
           </div>
           <div className="space-y-4">
              <h1 className="text-4xl sm:text-6xl font-black text-slate-900 tracking-tighter uppercase italic leading-none">SMM Dashboard</h1>
@@ -101,7 +113,10 @@ export default function Login() {
              <button className="h-14 sm:h-16 border-2 border-slate-50 bg-white hover:bg-slate-50 rounded-2xl flex items-center justify-center text-slate-900 transition-all active:scale-95 shadow-sm group/social">
                 <Github size={24} className="group-hover/social:rotate-12 transition-transform" />
              </button>
-             <button className="h-14 sm:h-16 border-2 border-slate-50 bg-white hover:bg-slate-50 rounded-2xl flex items-center justify-center text-slate-900 transition-all active:scale-95 shadow-sm group/social">
+             <button 
+                onClick={handleGoogleLogin}
+                className="h-14 sm:h-16 border-2 border-slate-50 bg-white hover:bg-slate-50 rounded-2xl flex items-center justify-center text-slate-900 transition-all active:scale-95 shadow-sm group/social"
+             >
                 <svg className="w-6 h-6 group-hover/social:rotate-[-12deg] transition-transform" viewBox="0 0 24 24">
                   <path fill="currentColor" d="M12.545,10.239v3.821h5.445c-0.712,2.315-2.647,3.972-5.445,3.972c-3.332,0-6.033-2.701-6.033-6.032s2.701-6.032,6.033-6.032c1.498,0,2.866,0.549,3.921,1.453l2.814-2.814C17.503,2.988,15.139,2,12.545,2C7.021,2,2.543,6.477,2.543,12s4.478,10,10.002,10c8.396,0,10.249-7.85,9.426-11.748L12.545,10.239z"/>
                 </svg>

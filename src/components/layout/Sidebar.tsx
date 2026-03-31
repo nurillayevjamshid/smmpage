@@ -1,10 +1,10 @@
 import { NavLink, useNavigate } from "react-router-dom";
+import { useAuth } from "@/hooks/useAuth";
 import { 
   LayoutDashboard, FolderKanban, CalendarDays, BarChart3, 
   Settings, LogOut, Users, Image as ImageIcon, FileText, X 
 } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { mockUser } from "@/data/mock";
 
 const navItems = [
   { name: "Overview", href: "/dashboard", icon: LayoutDashboard },
@@ -22,9 +22,17 @@ interface SidebarProps {
 
 export default function Sidebar({ isOpen, onClose }: SidebarProps) {
   const navigate = useNavigate();
+  const { user, logout } = useAuth();
 
-  const handleLogout = () => {
-    navigate("/login");
+  const handleLogout = async () => {
+    try {
+      await logout();
+      navigate("/login");
+    } catch (err) {
+      console.error(err);
+      // Fallback
+      navigate("/login");
+    }
   };
 
   return (
@@ -59,7 +67,7 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
               cn(
                 "flex items-center gap-3 px-4 py-3.5 rounded-2xl text-sm font-medium transition-all duration-200 group relative",
                 isActive
-                  ? "bg-indigo-50 text-indigo-700 shadow-sm shadow-indigo-50/50"
+                   ? "bg-indigo-50 text-indigo-700 shadow-sm shadow-indigo-50/50"
                   : "text-slate-500 hover:bg-slate-50 hover:text-slate-900"
               )
             }
@@ -77,15 +85,21 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
       {/* User Info & Logout (Bottom Section) */}
       <div className="p-4 border-t border-slate-100 shrink-0">
         <div className="flex items-center gap-3 px-4 py-3 bg-slate-50 rounded-2xl mb-2">
-          <img 
-            src={mockUser.photoURL} 
-            alt="User" 
-            className="w-10 h-10 rounded-full border border-slate-200 shadow-sm" 
-          />
-          <div className="flex-1 min-w-0">
-            <p className="text-sm font-semibold text-slate-900 truncate leading-tight">{mockUser.name}</p>
-            <p className="text-[11px] text-slate-500 truncate mt-0.5 uppercase tracking-wide font-medium">{mockUser.role}</p>
-          </div>
+          {user ? (
+            <>
+              <img 
+                src={user.photoURL} 
+                alt="User" 
+                className="w-10 h-10 rounded-full border border-slate-200 shadow-sm" 
+              />
+              <div className="flex-1 min-w-0">
+                <p className="text-sm font-semibold text-slate-900 truncate leading-tight">{user.name}</p>
+                <p className="text-[11px] text-slate-500 truncate mt-0.5 uppercase tracking-wide font-medium">Strategist</p>
+              </div>
+            </>
+          ) : (
+            <div className="h-10 w-full animate-pulse bg-slate-200 rounded-xl" />
+          )}
         </div>
         <button
           onClick={handleLogout}

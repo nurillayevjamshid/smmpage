@@ -1,31 +1,31 @@
-import { useState, useEffect } from 'react';
-import { auth, db } from '@/config/firebase';
-import { onAuthStateChanged, User as FirebaseUser } from 'firebase/auth';
-import { doc, getDoc, setDoc } from 'firebase/firestore';
-import { User } from '@/types';
+import { useState, useEffect } from "react";
+import { auth, db } from "@/lib/firebase";
+import { onAuthStateChanged, User as FirebaseUser, signOut } from "firebase/auth";
+import { doc, getDoc, setDoc, serverTimestamp } from "firebase/firestore";
 
 export function useAuth() {
-  const [user, setUser] = useState<User | null>(null);
+  const [user, setUser] = useState<any | null>(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, async (firebaseUser: FirebaseUser | null) => {
       if (firebaseUser) {
-        const userRef = doc(db, 'users', firebaseUser.uid);
+        const userRef = doc(db, "users", firebaseUser.uid);
         const userSnap = await getDoc(userRef);
         
         if (!userSnap.exists()) {
-          const newUser: User = {
+          const newUser = {
             id: firebaseUser.uid,
-            name: firebaseUser.displayName || 'User',
-            email: firebaseUser.email || '',
-            photoURL: firebaseUser.photoURL || '',
-            createdAt: Date.now(),
+            name: firebaseUser.displayName || "User",
+            email: firebaseUser.email || "",
+            photoURL: firebaseUser.photoURL || "",
+            role: "SMM Manager",
+            createdAt: serverTimestamp(),
           };
           await setDoc(userRef, newUser);
           setUser(newUser);
         } else {
-          setUser(userSnap.data() as User);
+          setUser({ id: firebaseUser.uid, ...userSnap.data() });
         }
       } else {
         setUser(null);
@@ -36,5 +36,7 @@ export function useAuth() {
     return () => unsubscribe();
   }, []);
 
-  return { user, loading };
+  const logout = () => signOut(auth);
+
+  return { user, loading, logout };
 }

@@ -3,7 +3,7 @@ export interface User {
   name: string;
   email: string;
   photoURL: string;
-  createdAt: number;
+  createdAt: any;
 }
 
 export interface Project {

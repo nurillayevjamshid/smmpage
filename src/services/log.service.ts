@@ -1,5 +1,5 @@
-import { db } from "@/config/firebase";
-import { collection, addDoc } from "firebase/firestore";
+import { db } from "@/lib/firebase";
+import { collection, addDoc, serverTimestamp } from "firebase/firestore";
 
 export const logService = {
   async createLog(data: {
@@ -12,7 +12,7 @@ export const logService = {
     try {
       await addDoc(collection(db, "activity_logs"), {
         ...data,
-        createdAt: Date.now(),
+        createdAt: serverTimestamp(),
       });
     } catch (error) {
       console.error("Failed to create log:", error);

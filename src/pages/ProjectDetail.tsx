@@ -1,10 +1,11 @@
-import { useParams, useNavigate, Link } from "react-router-dom";
+import { useParams, useNavigate } from "react-router-dom";
 import { 
   ArrowLeft, Calendar, Share2, Plus, 
   MessageSquare, MoreHorizontal, ChevronRight, 
   BarChart2, Clock, CheckCircle2, Globe 
 } from "lucide-react";
-import { mockProjects, mockPosts } from "@/data/mock";
+import { useProject } from "@/hooks/useProject";
+import { usePosts } from "@/hooks/usePosts";
 import { Button } from "@/components/ui/Button";
 import { Card } from "@/components/ui/Card";
 import { Badge } from "@/components/ui/Badge";
@@ -13,10 +14,11 @@ import { cn } from "@/lib/utils";
 export default function ProjectDetail() {
   const { id } = useParams();
   const navigate = useNavigate();
-  const project = mockProjects.find((p) => p.id === id);
-  const projectPosts = mockPosts.filter((p) => p.projectId === id);
+  const { project, loading: projectLoading } = useProject(id);
+  const { posts: projectPosts, loading: postsLoading } = usePosts(id);
 
-  if (!project) return <div>Project not found</div>;
+  if (projectLoading) return <div className="p-8 text-center animate-pulse">Loading Project Details...</div>;
+  if (!project) return <div className="p-8 text-center text-rose-500 font-bold">Project not found</div>;
 
   return (
     <div className="space-y-6 sm:space-y-10 animate-in fade-in slide-in-from-bottom-3 duration-500 max-w-full">
@@ -63,62 +65,63 @@ export default function ProjectDetail() {
           
           <div className="grid grid-cols-1 gap-4 sm:gap-6">
             {projectPosts.length > 0 ? (
-              projectPosts.map((post) => (
-                <Card 
-                  key={post.id} 
-                  className="p-4 sm:p-6 hover:shadow-xl hover:shadow-slate-200/40 transition-all border-slate-100 group relative overflow-hidden active:scale-[0.99]"
-                >
-                  <div className="flex gap-4 sm:gap-6">
-                    {/* Post Thumbnail (Simplified for Mobile) */}
-                    <div className="w-16 h-16 sm:w-28 sm:h-28 rounded-2xl bg-indigo-50 border border-indigo-50 overflow-hidden shrink-0 shadow-sm relative group-hover:scale-105 transition-transform">
-                      {post.media && post.media.length > 0 ? (
-                        <img 
-                          src={post.media[0]} 
-                          className="w-full h-full object-cover grayscale group-hover:grayscale-0 transition-all duration-300" 
-                        />
-                      ) : (
-                        <div className="flex items-center justify-center w-full h-full text-indigo-400">
-                          <MessageSquare size={24} />
-                        </div>
-                      )}
-                      <div className="absolute top-1 left-1 sm:top-2 sm:left-2 capitalize">
-                        <div className="w-5 h-5 sm:w-7 sm:h-7 bg-white rounded-full flex items-center justify-center shadow-md p-1">
-                          <Globe size={14} className="text-indigo-600" />
-                        </div>
-                      </div>
-                    </div>
+              projectPosts.map((post) => {
+                const statusVariant = 
+                  post.status === "published" ? "success" : 
+                  post.status === "scheduled" ? "warning" : "default";
 
-                    <div className="flex-1 min-w-0">
-                      <div className="flex justify-between items-start mb-2 sm:mb-3">
-                        <h4 className="font-bold text-base sm:text-lg text-slate-900 group-hover:text-indigo-700 transition-colors truncate pr-4">
-                          {post.title}
-                        </h4>
-                        <button className="p-2 sm:p-2.5 text-slate-400 hover:text-slate-600 hover:bg-slate-50 rounded-xl transition-all">
-                          <MoreHorizontal size={18} />
-                        </button>
-                      </div>
-                      <p className="text-xs sm:text-sm text-slate-500 mb-4 sm:mb-6 leading-relaxed line-clamp-2 max-w-sm">
-                        {post.content || "Ready for scheduling across multiple platforms."}
-                      </p>
-                      <div className="flex flex-wrap items-center gap-3 sm:gap-6">
-                        <div className="flex items-center gap-2 text-xs font-semibold text-slate-400 tracking-wide uppercase">
-                          <Clock size={14} className="text-indigo-500/70" />
-                          {post.scheduledAt}
+                return (
+                  <Card 
+                    key={post.id} 
+                    className="p-4 sm:p-6 hover:shadow-xl hover:shadow-slate-200/40 transition-all border-slate-100 group relative overflow-hidden active:scale-[0.99]"
+                  >
+                    <div className="flex gap-4 sm:gap-6">
+                      <div className="w-16 h-16 sm:w-28 sm:h-28 rounded-2xl bg-indigo-50 border border-indigo-50 overflow-hidden shrink-0 shadow-sm relative group-hover:scale-105 transition-transform">
+                        {post.mediaUrl ? (
+                          <img 
+                            src={post.mediaUrl} 
+                            className="w-full h-full object-cover grayscale group-hover:grayscale-0 transition-all duration-300" 
+                          />
+                        ) : (
+                          <div className="flex items-center justify-center w-full h-full text-indigo-400">
+                            <MessageSquare size={24} />
+                          </div>
+                        )}
+                        <div className="absolute top-1 left-1 sm:top-2 sm:left-2 capitalize">
+                          <div className="w-5 h-5 sm:w-7 sm:h-7 bg-white rounded-full flex items-center justify-center shadow-md p-1">
+                            <Globe size={14} className="text-indigo-600" />
+                          </div>
                         </div>
-                        <Badge 
-                          variant={
-                            post.status === "Published" ? "success" : 
-                            post.status === "Scheduled" ? "warning" : "default"
-                          }
-                          className="px-2.5 h-6 text-[10px] uppercase font-bold tracking-widest shadow-sm shadow-slate-100"
-                        >
-                          {post.status}
-                        </Badge>
+                      </div>
+
+                      <div className="flex-1 min-w-0">
+                        <div className="flex justify-between items-start mb-2 sm:mb-3">
+                          <h4 className="font-bold text-base sm:text-lg text-slate-900 group-hover:text-indigo-700 transition-colors truncate pr-4">
+                            {post.caption || "Untitled Post"}
+                          </h4>
+                          <button className="p-2 sm:p-2.5 text-slate-400 hover:text-slate-600 hover:bg-slate-50 rounded-xl transition-all">
+                            <MoreHorizontal size={18} />
+                          </button>
+                        </div>
+                        <p className="text-xs sm:text-sm text-slate-500 mb-4 sm:mb-6 leading-relaxed line-clamp-2 max-w-sm">
+                          Content ready for scheduling.
+                        </p>
+                        <div className="flex flex-wrap items-center gap-3 sm:gap-6">
+                          <div className="flex items-center gap-2 text-xs font-semibold text-slate-400 tracking-wide uppercase">
+                            <Clock size={14} className="text-indigo-500/70" />
+                            {post.scheduledAt instanceof Date 
+                              ? post.scheduledAt.toLocaleDateString() 
+                              : (post.scheduledAt as any)?.toDate?.()?.toLocaleDateString() || "Recently"}
+                          </div>
+                          <Badge variant={statusVariant as any}>
+                            {post.status}
+                          </Badge>
+                        </div>
                       </div>
                     </div>
-                  </div>
-                </Card>
-              ))
+                  </Card>
+                );
+              })
             ) : (
               <div className="py-20 text-center bg-slate-50/50 rounded-3xl border border-dashed border-slate-200">
                  <p className="text-slate-400 font-medium">No posts created yet for this project.</p>
@@ -150,7 +153,7 @@ export default function ProjectDetail() {
                  </div>
                  <div className="flex items-center justify-between group-hover:translate-x-1 transition-transform delay-100">
                     <span className="text-sm font-medium text-slate-500 opacity-80">Weekly Growth</span>
-                    <Badge variant="success" className="px-2 font-bold">+12.4%</Badge>
+                    <Badge variant="success">+12.4%</Badge>
                  </div>
                  <div className="pt-5 border-t border-slate-50">
                     <div className="flex items-center gap-4 group-hover:gap-5 transition-all">

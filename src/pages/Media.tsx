@@ -1,19 +1,15 @@
+import { useState } from "react";
+import { useAuth } from "@/hooks/useAuth";
+import { useMedia } from "@/hooks/useMedia";
 import { Upload, Search, Filter, MoreHorizontal, Image as ImageIcon, Video, FileText, Share, Download, Trash2, LayoutGrid, List } from "lucide-react";
 import { Button } from "@/components/ui/Button";
 import { Input } from "@/components/ui/Input";
 import { Card } from "@/components/ui/Card";
 import { cn } from "@/lib/utils";
 
-const media = [
-  { id: 1, type: "image", name: "Project-1-Hero.png", size: "2.4 MB", date: "2024-03-20", url: "https://picsum.photos/600/450?random=1" },
-  { id: 2, type: "video", name: "Campaign-promo.mp4", size: "15.8 MB", date: "2024-03-18", url: "" },
-  { id: 3, type: "document", name: "Strategy-Guide.pdf", size: "1.2 MB", date: "2024-03-15", url: "" },
-  { id: 4, type: "image", name: "Banner-Ad.jpg", size: "1.8 MB", date: "2024-03-12", url: "https://picsum.photos/600/400?random=2" },
-  { id: 5, type: "image", name: "Social-Ad.png", size: "3.2 MB", date: "2024-03-10", url: "https://picsum.photos/600/400?random=3" },
-  { id: 6, type: "image", name: "Mockup-Final.psd", size: "125.4 MB", date: "2024-03-08", url: "https://picsum.photos/600/400?random=4" },
-];
-
 export default function Media() {
+  const { user } = useAuth();
+  const { media, loading } = useMedia(user?.id);
   return (
     <div className="space-y-6 sm:space-y-10 animate-in fade-in slide-in-from-bottom-2 duration-500 max-w-full overflow-x-hidden">
       
@@ -63,64 +59,78 @@ export default function Media() {
         </div>
       </div>
 
-      {/* Media Grid - Fluid (1 to 2 to 3 to 4) */}
+      {/* Media Grid */}
       <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-4 gap-4 sm:gap-6 lg:gap-8 pb-10">
-        {media.map((item) => (
-          <Card key={item.id} className="overflow-hidden group border-slate-100 hover:shadow-2xl hover:shadow-slate-200/50 transition-all duration-300 rounded-[1.5rem] sm:rounded-[2rem] active:scale-[0.98] flex flex-col h-full">
-            {/* Visual Preview */}
-            <div className="aspect-[4/3] bg-slate-100 flex items-center justify-center border-b border-slate-50/50 relative overflow-hidden shrink-0">
-              {item.type === "image" ? (
-                <img 
-                   src={item.url} 
-                   alt={item.name} 
-                   className="w-full h-full object-cover grayscale opacity-90 group-hover:grayscale-0 group-hover:opacity-100 group-hover:scale-110 transition-all duration-500 ease-out" 
-                />
-              ) : (
-                <div className="flex flex-col items-center gap-3 group-hover:scale-110 transition-transform duration-500">
-                   <div className="p-4 bg-white rounded-2xl shadow-sm border border-slate-50 text-indigo-500">
-                      {item.type === "video" ? <Video size={36} /> : <FileText size={36} />}
-                   </div>
-                   <span className="text-[10px] font-bold text-slate-700 uppercase tracking-widest">{item.type}</span>
-                </div>
-              )}
-              
-              {/* Context Actions (Overlay) */}
-              <div className="absolute top-3 right-3 opacity-0 translate-y-2 group-hover:opacity-100 group-hover:translate-y-0 transition-all">
-                <div className="flex flex-col gap-2">
-                   <button className="p-2.5 bg-white backdrop-blur-md rounded-xl shadow-xl text-slate-600 hover:text-indigo-600 hover:scale-110 active:scale-95 transition-all">
-                      <Share size={15} />
-                   </button>
-                   <button className="p-2.5 bg-white backdrop-blur-md rounded-xl shadow-xl text-slate-600 hover:text-indigo-600 hover:scale-110 active:scale-95 transition-all">
-                      <Download size={15} />
-                   </button>
-                </div>
-              </div>
-
-               {/* Hover Label Overlay for Images */}
-               {item.type === "image" && (
-                  <div className="absolute inset-x-0 bottom-0 p-4 translate-y-full group-hover:translate-y-0 transition-transform bg-gradient-to-t from-slate-900/80 to-transparent">
-                     <p className="text-[10px] font-bold text-white uppercase tracking-widest truncate">{item.name}</p>
+        {loading ? (
+          [1,2,3,4].map(i => (
+            <div key={i} className="aspect-[4/3] bg-slate-100 animate-pulse rounded-[1.5rem] sm:rounded-[2rem]" />
+          ))
+        ) : media.length > 0 ? (
+          media.map((item) => (
+            <Card key={item.id} className="overflow-hidden group border-slate-100 hover:shadow-2xl hover:shadow-slate-200/50 transition-all duration-300 rounded-[1.5rem] sm:rounded-[2rem] active:scale-[0.98] flex flex-col h-full">
+              {/* Visual Preview */}
+              <div className="aspect-[4/3] bg-slate-100 flex items-center justify-center border-b border-slate-50/50 relative overflow-hidden shrink-0">
+                {item.type.includes("image") ? (
+                  <img 
+                     src={item.url} 
+                     alt={item.name} 
+                     className="w-full h-full object-cover grayscale opacity-90 group-hover:grayscale-0 group-hover:opacity-100 group-hover:scale-110 transition-all duration-500 ease-out" 
+                  />
+                ) : (
+                  <div className="flex flex-col items-center gap-3 group-hover:scale-110 transition-transform duration-500">
+                     <div className="p-4 bg-white rounded-2xl shadow-sm border border-slate-50 text-indigo-500">
+                        {item.type.includes("video") ? <Video size={36} /> : <FileText size={36} />}
+                     </div>
+                     <span className="text-[10px] font-bold text-slate-700 uppercase tracking-widest">{item.type.split('/')[1] || item.type}</span>
                   </div>
-               )}
-            </div>
+                )}
+                
+                {/* Context Actions */}
+                <div className="absolute top-3 right-3 opacity-0 translate-y-2 group-hover:opacity-100 group-hover:translate-y-0 transition-all">
+                  <div className="flex flex-col gap-2">
+                     <button className="p-2.5 bg-white backdrop-blur-md rounded-xl shadow-xl text-slate-600 hover:text-indigo-600 hover:scale-110 active:scale-95 transition-all">
+                        <Share size={15} />
+                     </button>
+                     <a href={item.url} download className="p-2.5 bg-white backdrop-blur-md rounded-xl shadow-xl text-slate-600 hover:text-indigo-600 hover:scale-110 active:scale-95 transition-all">
+                        <Download size={15} />
+                     </a>
+                  </div>
+                </div>
 
-            {/* Item Details */}
-            <div className="p-4 sm:p-5 flex-1 flex flex-col bg-white">
-              <div className="flex items-start justify-between gap-3 mb-4">
-                <div className="min-w-0">
-                  <p className="font-bold text-slate-900 text-sm sm:text-base truncate group-hover:text-indigo-700 transition-colors uppercase tracking-tight">{item.name.split('.')[0]}</p>
-                  <p className="text-[11px] font-medium text-slate-400 mt-1 uppercase tracking-wide">{item.size} • {item.date}</p>
+                 {/* Hover Label */}
+                 {item.type.includes("image") && (
+                    <div className="absolute inset-x-0 bottom-0 p-4 translate-y-full group-hover:translate-y-0 transition-transform bg-gradient-to-t from-slate-900/80 to-transparent">
+                       <p className="text-[10px] font-bold text-white uppercase tracking-widest truncate">{item.name}</p>
+                    </div>
+                 )}
+              </div>
+
+              {/* Item Details */}
+              <div className="p-4 sm:p-5 flex-1 flex flex-col bg-white">
+                <div className="flex items-start justify-between gap-3 mb-4">
+                  <div className="min-w-0">
+                    <p className="font-bold text-slate-900 text-sm sm:text-base truncate group-hover:text-indigo-700 transition-colors uppercase tracking-tight">{item.name.split('.')[0]}</p>
+                    <p className="text-[11px] font-medium text-slate-400 mt-1 uppercase tracking-wide">
+                      {item.size} • {item.createdAt instanceof Date ? item.createdAt.toLocaleDateString() : (item.createdAt as any)?.toDate?.()?.toLocaleDateString() || "Recently"}
+                    </p>
+                  </div>
+                </div>
+                <div className="mt-auto flex items-center justify-between gap-3 pt-4 border-t border-slate-50">
+                  <Button variant="secondary" className="h-9 px-4 rounded-xl text-[10px] font-extrabold uppercase tracking-widest shadow-none border-slate-50 hover:bg-slate-100/80">View</Button>
+                  <button className="p-2 text-slate-300 hover:text-rose-500 hover:bg-rose-50 rounded-lg transition-all active:scale-90">
+                     <Trash2 size={16} />
+                  </button>
                 </div>
               </div>
-              <div className="mt-auto flex items-center justify-between gap-3 pt-4 border-t border-slate-50">
-                <Button variant="secondary" className="h-9 px-4 rounded-xl text-[10px] font-extrabold uppercase tracking-widest shadow-none border-slate-50 hover:bg-slate-100/80">View</Button>
-                <button className="p-2 text-slate-300 hover:text-rose-500 hover:bg-rose-50 rounded-lg transition-all active:scale-90">
-                   <Trash2 size={16} />
-                </button>
-              </div>
-            </div>
-          </Card>
-        ))}
+            </Card>
+          ))
+        ) : (
+          <div className="col-span-full py-20 text-center bg-slate-50/50 rounded-[2.5rem] border-2 border-dashed border-slate-100">
+             <ImageIcon size={48} className="mx-auto text-slate-200 mb-4" />
+             <h3 className="text-xl font-bold text-slate-400 uppercase tracking-widest">No assets found</h3>
+             <p className="text-sm text-slate-400 mt-2">Start uploading media to see them here.</p>
+          </div>
+        )}
       </div>
     </div>
   );
