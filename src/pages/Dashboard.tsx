@@ -2,6 +2,7 @@ import { mockStats, mockRecentActivity } from "@/data/mock";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/Card";
 import { Badge } from "@/components/ui/Badge";
 import { FolderKanban, CalendarDays, Send, AlertCircle } from "lucide-react";
+import StatCard from "@/components/dashboard/StatCard";
 
 export default function Dashboard() {
   const statCards = [
@@ -21,17 +22,7 @@ export default function Dashboard() {
       {/* Stats Grid */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
         {statCards.map((stat, i) => (
-          <Card key={i} className="border-none shadow-sm shadow-slate-200/50">
-            <CardContent className="p-6 flex items-center gap-4">
-              <div className={`w-14 h-14 rounded-2xl flex items-center justify-center ${stat.bg}`}>
-                <stat.icon className={stat.color} size={24} />
-              </div>
-              <div>
-                <p className="text-sm font-medium text-slate-500">{stat.title}</p>
-                <h3 className="text-3xl font-bold text-slate-900 mt-1">{stat.value}</h3>
-              </div>
-            </CardContent>
-          </Card>
+          <StatCard key={i} {...stat} />
         ))}
       </div>
 
@@ -67,3 +58,4 @@ export default function Dashboard() {
     </div>
   );
 }
+

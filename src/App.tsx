@@ -8,6 +8,10 @@ import Dashboard from './pages/Dashboard';
 import Projects from './pages/Projects';
 import ProjectDetail from './pages/ProjectDetail';
 import ComposePost from './pages/ComposePost';
+import Accounts from './pages/Accounts';
+import Media from './pages/Media';
+import Posts from './pages/Posts';
+import Settings from './pages/Settings';
 
 export default function App() {
   return (
@@ -31,13 +35,13 @@ export default function App() {
           <Route path="projects" element={<Projects />} />
           <Route path="projects/:id" element={<ProjectDetail />} />
           <Route path="projects/:id/compose" element={<ComposePost />} />
-          
-          {/* Placeholder routes for sidebar links */}
-          <Route path="scheduled" element={<div className="p-8 text-2xl font-bold">Scheduled Posts (Coming Soon)</div>} />
-          <Route path="analytics" element={<div className="p-8 text-2xl font-bold">Analytics (Coming Soon)</div>} />
-          <Route path="settings" element={<div className="p-8 text-2xl font-bold">Settings (Coming Soon)</div>} />
+          <Route path="accounts" element={<Accounts />} />
+          <Route path="media" element={<Media />} />
+          <Route path="posts" element={<Posts />} />
+          <Route path="settings" element={<Settings />} />
         </Route>
       </Routes>
     </BrowserRouter>
   );
 }
+
