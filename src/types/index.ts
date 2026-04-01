@@ -24,7 +24,9 @@ export interface SocialAccount {
   accountName: string;
   accountId: string;
   accessToken?: string;
-  chatId?: string;
+  chatId?: string; // For Telegram
+  fbPageId?: string; // For Instagram
+  igBusinessId?: string; // For Instagram
   status: 'active' | 'error';
   createdAt: number;
 }
