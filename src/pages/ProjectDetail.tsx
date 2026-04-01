@@ -12,6 +12,7 @@ import { Card } from "@/components/ui/Card";
 import { Badge } from "@/components/ui/Badge";
 import { cn } from "@/lib/utils";
 import EditProjectModal from "@/components/projects/EditProjectModal";
+import ProjectSocialAccounts from "@/components/projects/ProjectSocialAccounts";
 
 export default function ProjectDetail() {
   const { id } = useParams();
@@ -193,6 +194,8 @@ export default function ProjectDetail() {
                  </div>
               </div>
            </Card>
+
+           <ProjectSocialAccounts projectId={project.id} />
 
            <Card className="p-6 sm:p-8 bg-indigo-900 border-none shadow-xl shadow-indigo-100 rounded-[2.5rem] text-white overflow-hidden relative group">
               <div className="absolute top-0 right-0 p-8 opacity-10 group-hover:scale-125 transition-transform duration-700">
