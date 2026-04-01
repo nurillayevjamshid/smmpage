@@ -12,6 +12,7 @@ import Accounts from './pages/Accounts';
 import Media from './pages/Media';
 import Posts from './pages/Posts';
 import Settings from './pages/Settings';
+import Admin from './pages/Admin';
 
 export default function App() {
   return (
@@ -39,6 +40,7 @@ export default function App() {
           <Route path="media" element={<Media />} />
           <Route path="posts" element={<Posts />} />
           <Route path="settings" element={<Settings />} />
+          <Route path="admin" element={<Admin />} />
         </Route>
       </Routes>
     </BrowserRouter>

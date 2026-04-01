@@ -2,7 +2,7 @@ import { NavLink, useNavigate } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
 import { 
   LayoutDashboard, FolderKanban, CalendarDays, BarChart3, 
-  Settings, LogOut, Users, Image as ImageIcon, FileText, X 
+  Settings, LogOut, Users, Image as ImageIcon, FileText, X, ShieldCheck 
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -22,7 +22,7 @@ interface SidebarProps {
 
 export default function Sidebar({ isOpen, onClose }: SidebarProps) {
   const navigate = useNavigate();
-  const { user, logout } = useAuth();
+  const { user, logout, isAdmin } = useAuth();
 
   const handleLogout = async () => {
     try {
@@ -30,7 +30,6 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
       navigate("/login");
     } catch (err) {
       console.error(err);
-      // Fallback
       navigate("/login");
     }
   };
@@ -42,7 +41,6 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
         isOpen ? "translate-x-0" : "-translate-x-full"
       )}
     >
-      {/* Sidebar Brand & Close Icon (on mobile) */}
       <div className="p-6 flex items-center justify-between gap-3 shrink-0">
         <div className="flex items-center gap-3">
           <div className="w-10 h-10 bg-indigo-600 rounded-xl flex items-center justify-center shadow-sm shadow-indigo-200">
@@ -72,7 +70,7 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
               )
             }
           >
-            <item.icon size={20} className="shrink-0" />
+            <item.icon size={20} className={cn("shrink-0", "group-[.active]:text-indigo-600")} />
             {item.name}
             <div className={cn(
               "absolute right-4 w-1 h-1 rounded-full bg-indigo-600 opacity-0 transition-opacity",
@@ -80,9 +78,28 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
             )} />
           </NavLink>
         ))}
+
+        {isAdmin && (
+          <div className="pt-4 mt-4 border-t border-slate-100">
+            <p className="px-4 mb-2 text-[10px] font-black text-slate-400 uppercase tracking-widest leading-none">Security Zone</p>
+            <NavLink
+              to="/admin"
+              className={({ isActive }) =>
+                cn(
+                  "flex items-center gap-3 px-4 py-3.5 rounded-2xl text-sm font-medium transition-all duration-200 group relative",
+                  isActive
+                    ? "bg-slate-900 text-white shadow-xl shadow-slate-200"
+                    : "text-slate-500 hover:bg-slate-50 hover:text-slate-900"
+                )
+              }
+            >
+              <ShieldCheck size={20} className={cn("shrink-0", "group-[.active]:text-white")} />
+              Admin Protocol
+            </NavLink>
+          </div>
+        )}
       </nav>
 
-      {/* User Info & Logout (Bottom Section) */}
       <div className="p-4 border-t border-slate-100 shrink-0">
         <div className="flex items-center gap-3 px-4 py-3 bg-slate-50 rounded-2xl mb-2">
           {user ? (
@@ -93,8 +110,13 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
                 className="w-10 h-10 rounded-full border border-slate-200 shadow-sm" 
               />
               <div className="flex-1 min-w-0">
-                <p className="text-sm font-semibold text-slate-900 truncate leading-tight">{user.name}</p>
-                <p className="text-[11px] text-slate-500 truncate mt-0.5 uppercase tracking-wide font-medium">Strategist</p>
+                <p className="text-sm font-semibold text-slate-900 truncate leading-tight">{user.displayName || user.name}</p>
+                <p className={cn(
+                  "text-[10px] truncate mt-0.5 uppercase tracking-widest font-bold px-2 py-0.5 rounded-lg w-fit",
+                  isAdmin ? "bg-indigo-600 text-white" : "bg-white text-slate-500"
+                )}>
+                  {user.role}
+                </p>
               </div>
             </>
           ) : (
@@ -103,10 +125,10 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
         </div>
         <button
           onClick={handleLogout}
-          className="flex items-center gap-3 px-4 py-3.5 text-sm font-medium text-slate-500 hover:bg-rose-50 hover:text-rose-600 rounded-2xl w-full transition-colors duration-200"
+          className="flex items-center gap-3 px-4 py-3.5 text-sm font-medium text-slate-500 hover:bg-rose-50 hover:text-rose-600 rounded-2xl w-full transition-colors duration-200 group"
         >
-          <LogOut size={19} />
-          Logout
+          <LogOut size={19} className="group-hover:-translate-x-1 transition-transform" />
+          Terminate Session
         </button>
       </div>
     </aside>

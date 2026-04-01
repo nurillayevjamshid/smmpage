@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { LayoutDashboard, Lock, Mail, ArrowRight, Github } from "lucide-react";
 import { Button } from "@/components/ui/Button";
@@ -6,19 +6,43 @@ import { Input } from "@/components/ui/Input";
 import { Card } from "@/components/ui/Card";
 import { toast } from "react-hot-toast";
 import { loginWithGoogle } from "@/services/auth";
+import { useAuth } from "@/hooks/useAuth";
+import { signInWithEmailAndPassword } from "firebase/auth";
+import { auth } from "@/lib/firebase";
 
 export default function Login() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [isLoggingIn, setIsLoggingIn] = useState(false);
   const navigate = useNavigate();
+  const { user, loading } = useAuth();
 
-  const handleLogin = (e: React.FormEvent) => {
+  useEffect(() => {
+    if (!loading && user) {
+      if (user.role === "Admin" || user.isAdmin) {
+        navigate("/admin");
+      } else {
+        navigate("/dashboard");
+      }
+    }
+  }, [user, loading, navigate]);
+
+  const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (email && password) {
-      toast.success("Welcome back, Jamshid!");
-      navigate("/dashboard");
-    } else {
+    if (!email || !password) {
       toast.error("Please enter email and password");
+      return;
+    }
+
+    try {
+      setIsLoggingIn(true);
+      const loadingToast = toast.loading("Verifying credentials...");
+      await signInWithEmailAndPassword(auth, email, password);
+      toast.success("Welcome back!", { id: loadingToast });
+    } catch (error: any) {
+      toast.error(error.message || "Invalid credentials");
+    } finally {
+      setIsLoggingIn(false);
     }
   };
 
@@ -27,7 +51,6 @@ export default function Login() {
       const loadingToast = toast.loading("Establishing connection with Google...");
       await loginWithGoogle();
       toast.success("Successfully authenticated!", { id: loadingToast });
-      navigate("/dashboard");
     } catch (error: any) {
       toast.error(error.message || "Failed to authenticate");
     }

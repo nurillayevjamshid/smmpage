@@ -38,21 +38,28 @@ export const createUserIfNotExists = async (user: FirebaseUser) => {
   const userRef = doc(db, "users", user.uid);
   const userSnap = await getDoc(userRef);
 
+  const isAdmin = user.email === "kayaove@gmail.com"; // Updated Admin email
+
   if (!userSnap.exists()) {
-    await setDoc(userRef, {
+    const newUser = {
       uid: user.uid,
       email: user.email || "",
       displayName: user.displayName || "New User",
-      photoURL: user.photoURL || "",
-      role: "SMM Manager",
+      photoURL: user.photoURL || `https://ui-avatars.com/api/?name=${encodeURIComponent(user.displayName || "User")}&background=random`,
+      role: isAdmin ? "Admin" : "SMM Manager",
       createdAt: serverTimestamp(),
       updatedAt: serverTimestamp(),
-    });
+    };
+    await setDoc(userRef, newUser);
+    return newUser;
   } else {
     // Optionally update user data
-    await setDoc(userRef, {
+    const updateData = {
       updatedAt: serverTimestamp(),
-    }, { merge: true });
+      photoURL: user.photoURL || userSnap.data().photoURL,
+    };
+    await setDoc(userRef, updateData, { merge: true });
+    return { ...userSnap.data(), ...updateData };
   }
 };
 
