@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
-import { collection, query, where, orderBy, onSnapshot } from "firebase/firestore";
-import { db } from "@/lib/firebase";
+import { collection, query, where, onSnapshot, addDoc, doc, deleteDoc, serverTimestamp } from "firebase/firestore";
+import { ref, uploadBytesResumable, getDownloadURL, deleteObject } from "firebase/storage";
+import { db, storage } from "@/lib/firebase";
 
 export interface MediaFile {
   id: string;
@@ -50,5 +51,66 @@ export function useMedia(userId: string | undefined) {
     return () => unsubscribe();
   }, [userId]);
 
-  return { media, loading };
+  const uploadFile = async (file: File, onProgress?: (p: number) => void): Promise<MediaFile> => {
+    if (!userId) throw new Error("User not found");
+    return new Promise((resolve, reject) => {
+      const fileName = `${Date.now()}_${file.name}`;
+      const storageRef = ref(storage, `media/${userId}/${fileName}`);
+      const uploadTask = uploadBytesResumable(storageRef, file);
+
+      uploadTask.on(
+        "state_changed",
+        (snapshot) => {
+          const progress = (snapshot.bytesTransferred / snapshot.totalBytes) * 100;
+          if (onProgress) onProgress(Math.round(progress));
+        },
+        (error) => reject(error),
+        async () => {
+          try {
+            const url = await getDownloadURL(uploadTask.snapshot.ref);
+            const bytes = file.size;
+            const size = bytes < 1024 * 1024 ? `${(bytes / 1024).toFixed(1)} KB` : `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
+
+            const docRef = await addDoc(collection(db, "media_files"), {
+              userId,
+              projectId: "",
+              name: file.name,
+              url,
+              type: file.type || "application/octet-stream",
+              size,
+              createdAt: serverTimestamp(),
+            });
+
+            resolve({
+              id: docRef.id,
+              userId,
+              projectId: "",
+              name: file.name,
+              url,
+              type: file.type || "application/octet-stream",
+              size,
+              createdAt: new Date(),
+            });
+          } catch (error) {
+            reject(error);
+          }
+        }
+      );
+    });
+  };
+
+  const deleteFile = async (id: string, url: string) => {
+    try {
+      if (url.includes('firebasestorage')) {
+        const fileRef = ref(storage, url);
+        await deleteObject(fileRef);
+      }
+      await deleteDoc(doc(db, "media_files", id));
+    } catch (error) {
+      console.error("Error deleting media:", error);
+      throw error;
+    }
+  };
+
+  return { media, loading, uploadFile, deleteFile };
 }

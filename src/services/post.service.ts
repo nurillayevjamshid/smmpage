@@ -56,7 +56,7 @@ export const postService = {
         try {
           const accounts = await socialAccountService.getAccountsByProject(projectId);
           const tgAccounts = accounts.filter(a => a.platform === "telegram" && a.status === "active");
-          const isVideo = file?.type.startsWith('video/');
+          const isVideo = file ? file.type.startsWith('video/') : (postData as any).mediaType?.startsWith('video/');
           
           for (const tg of tgAccounts) {
             const target = tg.chatId || tg.accountId;

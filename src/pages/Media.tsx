@@ -6,10 +6,35 @@ import { Button } from "@/components/ui/Button";
 import { Input } from "@/components/ui/Input";
 import { Card } from "@/components/ui/Card";
 import { cn } from "@/lib/utils";
+import toast from "react-hot-toast";
 
 export default function Media() {
   const { user } = useAuth();
-  const { media, loading } = useMedia(user?.id);
+  const { media, loading, uploadFile, deleteFile } = useMedia(user?.id);
+  const [uploading, setUploading] = useState(false);
+  const [progress, setProgress] = useState(0);
+
+  const handleUploadClick = () => {
+    const input = document.createElement("input");
+    input.type = "file";
+    input.accept = "image/*,video/*";
+    input.onchange = async (e) => {
+      const file = (e.target as HTMLInputElement).files?.[0];
+      if (!file) return;
+      try {
+        setUploading(true);
+        setProgress(0);
+        await uploadFile(file, (p) => setProgress(p));
+        toast.success("Media uploaded successfully");
+      } catch (error: any) {
+        toast.error("Upload failed: " + error.message);
+      } finally {
+        setUploading(false);
+      }
+    };
+    input.click();
+  };
+
   return (
     <div className="space-y-6 sm:space-y-10 animate-in fade-in slide-in-from-bottom-2 duration-500 max-w-full overflow-x-hidden">
       
@@ -28,8 +53,16 @@ export default function Media() {
           <Button variant="secondary" className="flex-1 sm:flex-none h-11 px-5 gap-2 rounded-xl text-xs sm:text-sm font-semibold active:scale-95 shadow-sm border-slate-100/50 hover:bg-slate-50">
              Folder Management
           </Button>
-          <Button className="flex-1 sm:flex-none h-11 px-6 gap-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl text-xs sm:text-sm font-bold shadow-lg shadow-indigo-100 active:scale-95 transition-all">
-            <Upload size={18} strokeWidth={2.5} /> Upload Media
+          <Button 
+            onClick={handleUploadClick} 
+            disabled={uploading}
+            className="flex-1 sm:flex-none h-11 px-6 gap-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl text-xs sm:text-sm font-bold shadow-lg shadow-indigo-100 active:scale-95 transition-all"
+          >
+            {uploading ? (
+               <span className="flex items-center gap-2">{progress}% Uploading</span>
+            ) : (
+               <><Upload size={18} strokeWidth={2.5} /> Upload Media</>
+            )}
           </Button>
         </div>
       </div>
@@ -116,8 +149,15 @@ export default function Media() {
                   </div>
                 </div>
                 <div className="mt-auto flex items-center justify-between gap-3 pt-4 border-t border-slate-50">
-                  <Button variant="secondary" className="h-9 px-4 rounded-xl text-[10px] font-extrabold uppercase tracking-widest shadow-none border-slate-50 hover:bg-slate-100/80">View</Button>
-                  <button className="p-2 text-slate-300 hover:text-rose-500 hover:bg-rose-50 rounded-lg transition-all active:scale-90">
+                  <Button variant="secondary" className="h-9 px-4 rounded-xl text-[10px] font-extrabold uppercase tracking-widest shadow-none border-slate-50 hover:bg-slate-100/80" onClick={() => window.open(item.url, '_blank')}>View</Button>
+                  <button 
+                     onClick={() => {
+                        if (window.confirm("Are you sure you want to delete this media?")) {
+                           deleteFile(item.id, item.url).then(() => toast.success("Deleted")).catch(() => toast.error("Error deleting"));
+                        }
+                     }}
+                     className="p-2 text-slate-300 hover:text-rose-500 hover:bg-rose-50 rounded-lg transition-all active:scale-90"
+                  >
                      <Trash2 size={16} />
                   </button>
                 </div>

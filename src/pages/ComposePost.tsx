@@ -8,6 +8,7 @@ import { Card, CardContent } from "@/components/ui/Card";
 import { Image as ImageIcon, Send, ArrowLeft, LayoutGrid, CheckCircle2, MoreHorizontal, Heart, MessageCircle, Bookmark } from "lucide-react";
 import { cn } from "@/lib/utils";
 import toast from "react-hot-toast";
+import MediaLibraryModal from "@/components/media/MediaLibraryModal";
 
 export default function ComposePost() {
   const { id } = useParams();
@@ -18,9 +19,12 @@ export default function ComposePost() {
   const [caption, setCaption] = useState("");
   const [mediaPreview, setMediaPreview] = useState<string | null>(null);
   const [mediaFile, setMediaFile] = useState<File | null>(null);
+  const [selectedMediaUrl, setSelectedMediaUrl] = useState<string | null>(null);
+  const [selectedMediaType, setSelectedMediaType] = useState<string | null>(null);
   const [platforms, setPlatforms] = useState<string[]>([]);
   const [isPublishing, setIsPublishing] = useState(false);
   const [activePreview, setActivePreview] = useState<string>("instagram");
+  const [isLibraryOpen, setIsLibraryOpen] = useState(false);
 
   // Load project platforms once project is loaded
   useEffect(() => {
@@ -37,6 +41,8 @@ export default function ComposePost() {
     const file = e.target.files?.[0];
     if (file) {
       setMediaFile(file);
+      setSelectedMediaUrl(null);
+      setSelectedMediaType(null);
       const url = URL.createObjectURL(file);
       setMediaPreview(url);
     }
@@ -44,7 +50,7 @@ export default function ComposePost() {
 
   const handlePublish = async () => {
     if (!user) return;
-    if (!caption && !mediaFile) {
+    if (!caption && !mediaFile && !selectedMediaUrl) {
       toast.error("Please add some text or media");
       return;
     }
@@ -54,8 +60,10 @@ export default function ComposePost() {
       await postService.createPost(user.id, id!, {
         caption,
         platforms,
-        status: "published"
-      }, mediaFile || undefined);
+        status: "published",
+        mediaUrl: selectedMediaUrl || undefined,
+        mediaType: selectedMediaType || undefined
+      } as any, mediaFile || undefined);
       
       toast.success("Content deployed successfully!");
       setTimeout(() => navigate(`/projects/${id}`), 1000);
@@ -140,15 +148,20 @@ export default function ComposePost() {
 
               {/* Media Upload */}
               <div className="space-y-4">
-                <label className="text-[11px] font-extrabold text-slate-400 uppercase tracking-widest flex items-center gap-2 mb-1 px-1">
-                   Visual Branding Assets
-                </label>
+                <div className="flex items-center justify-between mb-1 px-1">
+                  <label className="text-[11px] font-extrabold text-slate-400 uppercase tracking-widest flex items-center gap-2">
+                     Visual Branding Assets
+                  </label>
+                  <button onClick={() => setIsLibraryOpen(true)} className="text-[10px] font-black text-indigo-600 uppercase tracking-widest hover:text-indigo-800 transition-colors">
+                     Open Library
+                  </button>
+                </div>
                 <div className="border-2 border-dashed border-slate-100 bg-slate-50/30 rounded-[2rem] sm:rounded-[2.5rem] p-6 sm:p-12 text-center hover:bg-slate-50 transition-all relative overflow-hidden group active:scale-[0.99] hover:border-indigo-200">
                   {mediaPreview ? (
                     <div className="relative w-full aspect-video rounded-2xl overflow-hidden shadow-2xl">
                       <img src={mediaPreview} alt="Preview" className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700 font-bold" />
                       <div className="absolute inset-0 bg-slate-900/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center backdrop-blur-sm">
-                        <button onClick={() => { setMediaPreview(null); setMediaFile(null); }} className="bg-white text-rose-600 px-6 py-3 rounded-2xl font-black text-xs uppercase tracking-widest shadow-xl active:scale-90 transition-all">Destruct Asset</button>
+                        <button onClick={() => { setMediaPreview(null); setMediaFile(null); setSelectedMediaUrl(null); setSelectedMediaType(null); }} className="bg-white text-rose-600 px-6 py-3 rounded-2xl font-black text-xs uppercase tracking-widest shadow-xl active:scale-90 transition-all">Destruct Asset</button>
                       </div>
                     </div>
                   ) : (
@@ -291,6 +304,17 @@ export default function ComposePost() {
           </div>
         </div>
       </div>
+      <MediaLibraryModal 
+        isOpen={isLibraryOpen} 
+        onClose={() => setIsLibraryOpen(false)} 
+        userId={user?.id}
+        onSelect={(media) => {
+          setSelectedMediaUrl(media.url);
+          setSelectedMediaType(media.type);
+          setMediaPreview(media.url);
+          setMediaFile(null);
+        }}
+      />
     </div>
   );
 }
