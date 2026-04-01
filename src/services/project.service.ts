@@ -4,11 +4,11 @@ import { Project } from "@/types";
 import { logActivity } from "./firestore";
 
 export const projectService = {
-  async getProjects(userId: string): Promise<Project[]> {
+  async getProjects(ownerId: string): Promise<Project[]> {
     try {
       const q = query(
         collection(db, "projects"), 
-        where("userId", "==", userId),
+        where("ownerId", "==", ownerId),
         orderBy("createdAt", "desc")
       );
       const snap = await getDocs(q);
@@ -19,19 +19,19 @@ export const projectService = {
     }
   },
 
-  async createProject(userId: string, data: Partial<Project>): Promise<Project> {
+  async createProject(ownerId: string, data: Partial<Project>): Promise<Project> {
     try {
       const projectsRef = collection(db, "projects");
       const docRef = await addDoc(projectsRef, {
         ...data,
-        userId,
+        ownerId,
         postCount: 0,
         createdAt: serverTimestamp(),
       });
       
-      await logActivity(userId, docRef.id, "Created new project", "system", "success");
+      await logActivity(ownerId, docRef.id, "Created new project", "system", "success");
 
-      return { id: docRef.id, userId, ...data, createdAt: Date.now() } as Project;
+      return { id: docRef.id, ownerId, ...data, createdAt: Date.now() } as Project;
     } catch (error) {
       console.error("Error creating project:", error);
       throw new Error("Failed to create project");
@@ -51,10 +51,23 @@ export const projectService = {
     }
   },
 
-  async deleteProject(userId: string, projectId: string): Promise<void> {
+  async updateProject(projectId: string, data: Partial<Project>): Promise<void> {
+    try {
+      const projectRef = doc(db, "projects", projectId);
+      await updateDoc(projectRef, {
+        ...data,
+        updatedAt: serverTimestamp(),
+      });
+    } catch (error) {
+      console.error("Error updating project:", error);
+      throw new Error("Failed to update project");
+    }
+  },
+
+  async deleteProject(ownerId: string, projectId: string): Promise<void> {
     try {
       await deleteDoc(doc(db, "projects", projectId));
-      await logActivity(userId, projectId, "Deleted project", "system", "info" as any);
+      await logActivity(ownerId, projectId, "Deleted project", "system", "info" as any);
     } catch (error) {
       console.error("Error deleting project:", error);
       throw new Error("Failed to delete project");

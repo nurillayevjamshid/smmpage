@@ -1,26 +1,36 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { X, LayoutDashboard, Type, Palette, Globe } from "lucide-react";
 import { Button } from "@/components/ui/Button";
 import { Input } from "@/components/ui/Input";
 import { Card } from "@/components/ui/Card";
 import { toast } from "react-hot-toast";
-import { projectService } from "@/services/project.service";
 import { useAuth } from "@/hooks/useAuth";
+import { Project } from "@/types";
 
-interface CreateProjectModalProps {
+interface EditProjectModalProps {
   isOpen: boolean;
   onClose: () => void;
   onSuccess: () => void;
+  project: Project | null;
+  updateProject: (id: string, data: Partial<Project>) => Promise<void>;
 }
 
-export default function CreateProjectModal({ isOpen, onClose, onSuccess }: CreateProjectModalProps) {
+export default function EditProjectModal({ isOpen, onClose, onSuccess, project, updateProject }: EditProjectModalProps) {
   const { user } = useAuth();
   const [name, setName] = useState("");
   const [description, setDescription] = useState("");
   const [brandColor, setBrandColor] = useState("bg-indigo-600");
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  if (!isOpen) return null;
+  useEffect(() => {
+    if (project && isOpen) {
+      setName(project.name);
+      setDescription(project.description);
+      setBrandColor(project.brandColor || "bg-indigo-600");
+    }
+  }, [project, isOpen]);
+
+  if (!isOpen || !project) return null;
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -32,17 +42,15 @@ export default function CreateProjectModal({ isOpen, onClose, onSuccess }: Creat
 
     try {
       setIsSubmitting(true);
-      await projectService.createProject(user.uid, {
+      await updateProject(project.id, {
         name,
         description,
         brandColor,
-        platforms: ["instagram", "telegram"],
       });
-      toast.success("Project created successfully!");
       onSuccess();
       onClose();
     } catch (error) {
-      toast.error("Failed to create project");
+      // Error is handled by the hook
     } finally {
       setIsSubmitting(false);
     }
@@ -63,8 +71,8 @@ export default function CreateProjectModal({ isOpen, onClose, onSuccess }: Creat
               <LayoutDashboard size={24} />
             </div>
             <div>
-              <h2 className="text-xl font-bold text-slate-900">New Project</h2>
-              <p className="text-xs text-slate-500 font-medium uppercase tracking-wider">Project Configuration</p>
+              <h2 className="text-xl font-bold text-slate-900">Edit Project</h2>
+              <p className="text-xs text-slate-500 font-medium uppercase tracking-wider">Update Configuration</p>
             </div>
           </div>
           <button onClick={onClose} className="p-2 hover:bg-slate-50 rounded-full transition-colors">
@@ -122,7 +130,7 @@ export default function CreateProjectModal({ isOpen, onClose, onSuccess }: Creat
               disabled={isSubmitting}
               className="w-full h-16 bg-indigo-600 hover:bg-slate-900 text-white rounded-2xl font-black uppercase tracking-[0.2em] shadow-xl shadow-indigo-100 transition-all active:scale-[0.98]"
             >
-              {isSubmitting ? "Initializing..." : "Create Project"}
+              {isSubmitting ? "Saving..." : "Save Changes"}
             </Button>
           </div>
         </form>

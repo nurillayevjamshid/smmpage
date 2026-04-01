@@ -43,6 +43,18 @@ export function useProjects(userId: string | undefined) {
     }
   };
 
+  const updateProject = async (projectId: string, data: Partial<Project>) => {
+    if (!userId) return;
+    try {
+      await projectService.updateProject(projectId, data);
+      setProjects(prev => prev.map(p => p.id === projectId ? { ...p, ...data } : p));
+      toast.success("Project updated successfully");
+    } catch (err: any) {
+      toast.error(err.message);
+      throw err;
+    }
+  };
+
   const deleteProject = async (projectId: string) => {
     if (!userId) return;
     try {
@@ -57,5 +69,5 @@ export function useProjects(userId: string | undefined) {
     }
   };
 
-  return { projects, loading, error, createProject, deleteProject, refresh: fetchProjects };
+  return { projects, loading, error, createProject, updateProject, deleteProject, refresh: fetchProjects };
 }

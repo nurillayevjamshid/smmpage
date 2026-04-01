@@ -8,12 +8,13 @@ export interface User {
 
 export interface Project {
   id: string;
-  userId: string;
+  ownerId: string;
   name: string;
   description: string;
   brandColor?: string;
   platforms: string[];
-  createdAt: number;
+  createdAt: any;
+  postCount?: number;
 }
 
 export interface SocialAccount {

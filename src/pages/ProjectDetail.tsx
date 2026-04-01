@@ -1,8 +1,9 @@
+import { useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { 
   ArrowLeft, Calendar, Share2, Plus, 
   MessageSquare, MoreHorizontal, ChevronRight, 
-  BarChart2, Clock, CheckCircle2, Globe 
+  BarChart2, Clock, CheckCircle2, Globe, Settings, Trash2
 } from "lucide-react";
 import { useProject } from "@/hooks/useProject";
 import { usePosts } from "@/hooks/usePosts";
@@ -10,12 +11,14 @@ import { Button } from "@/components/ui/Button";
 import { Card } from "@/components/ui/Card";
 import { Badge } from "@/components/ui/Badge";
 import { cn } from "@/lib/utils";
+import EditProjectModal from "@/components/projects/EditProjectModal";
 
 export default function ProjectDetail() {
   const { id } = useParams();
   const navigate = useNavigate();
-  const { project, loading: projectLoading } = useProject(id);
+  const { project, loading: projectLoading, refresh, updateProject, deleteProject } = useProject(id);
   const { posts: projectPosts, loading: postsLoading } = usePosts(id);
+  const [isEditModalOpen, setIsEditModalOpen] = useState(false);
 
   if (projectLoading) return <div className="p-8 text-center animate-pulse">Loading Project Details...</div>;
   if (!project) return <div className="p-8 text-center text-rose-500 font-bold">Project not found</div>;
@@ -42,6 +45,29 @@ export default function ProjectDetail() {
           </div>
         </div>
         <div className="flex items-center gap-2 w-full sm:w-auto mt-2 sm:mt-0">
+          <Button 
+            variant="secondary" 
+            onClick={() => setIsEditModalOpen(true)}
+            className="flex-none h-11 px-4 gap-2 rounded-xl text-xs sm:text-sm font-semibold active:scale-95 shadow-sm border-slate-100/50"
+          >
+            <Settings size={16} /> <span className="hidden sm:inline">Settings</span>
+          </Button>
+          <Button 
+            variant="secondary" 
+            onClick={async () => {
+              if (window.confirm("Are you sure you want to delete this project? This action cannot be undone.")) {
+                try {
+                  await deleteProject();
+                  navigate("/projects");
+                } catch (error) {
+                  console.error(error);
+                }
+              }
+            }}
+            className="flex-none h-11 px-4 gap-2 rounded-xl text-xs sm:text-sm font-semibold active:scale-95 shadow-sm border-red-100 text-red-600 hover:bg-red-50 hover:text-red-700"
+          >
+            <Trash2 size={16} /> <span className="hidden sm:inline">Delete</span>
+          </Button>
           <Button variant="secondary" className="flex-1 sm:flex-none h-11 px-4 gap-2 rounded-xl text-xs sm:text-sm font-semibold active:scale-95 shadow-sm border-slate-100/50">
             <Share2 size={16} /> Manage Members
           </Button>
@@ -186,6 +212,14 @@ export default function ProjectDetail() {
         </div>
 
       </div>
+
+      <EditProjectModal
+        isOpen={isEditModalOpen}
+        onClose={() => setIsEditModalOpen(false)}
+        onSuccess={refresh}
+        project={project}
+        updateProject={(_, data) => updateProject(data)}
+      />
     </div>
   );
 }

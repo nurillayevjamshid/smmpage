@@ -6,12 +6,35 @@ import { Plus, Filter, LayoutGrid, List, Search } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import ProjectCard from "@/components/projects/ProjectCard";
 import CreateProjectModal from "@/components/projects/CreateProjectModal";
+import EditProjectModal from "@/components/projects/EditProjectModal";
+import { Project } from "@/types";
 
 export default function Projects() {
   const navigate = useNavigate();
   const { user } = useAuth();
-  const { projects, loading, refresh } = useProjects(user?.id);
+  const { projects, loading, refresh, deleteProject, updateProject } = useProjects(user?.id);
   const [isModalOpen, setIsModalOpen] = useState(false);
+  
+  const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+  const [selectedProject, setSelectedProject] = useState<Project | null>(null);
+
+  const handleEdit = (id: string) => {
+    const projectToEdit = projects.find(p => p.id === id);
+    if (projectToEdit) {
+      setSelectedProject(projectToEdit);
+      setIsEditModalOpen(true);
+    }
+  };
+
+  const handleDelete = async (id: string) => {
+    if (window.confirm("Are you sure you want to delete this project? This action cannot be undone.")) {
+      try {
+        await deleteProject(id);
+      } catch (error) {
+        console.error("Failed to delete project:", error);
+      }
+    }
+  };
 
   return (
     <div className="space-y-6 sm:space-y-8 animate-in slide-in-from-bottom-2 duration-500 overflow-x-hidden w-full">
@@ -46,6 +69,8 @@ export default function Projects() {
               key={project.id} 
               {...project} 
               onClick={(id) => navigate(`/projects/${id}`)}
+              onEdit={handleEdit}
+              onDelete={handleDelete}
               className="w-full h-full transform hover:-translate-y-1 active:scale-95 transition-all duration-300 shadow-sm hover:shadow-xl shadow-slate-200/20"
             />
           ))}
@@ -85,6 +110,15 @@ export default function Projects() {
         onClose={() => setIsModalOpen(false)}
         onSuccess={refresh}
       />
+
+      <EditProjectModal
+        isOpen={isEditModalOpen}
+        onClose={() => { setIsEditModalOpen(false); setSelectedProject(null); }}
+        onSuccess={refresh}
+        project={selectedProject}
+        updateProject={updateProject}
+      />
     </div>
   );
 }
+
