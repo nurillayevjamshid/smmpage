@@ -13,6 +13,8 @@ const firebaseConfig = {
   appId: import.meta.env.VITE_FIREBASE_APP_ID || import.meta.env.NEXT_PUBLIC_FIREBASE_APP_ID,
 };
 
+console.log("Firebase Config Debug:", { ...firebaseConfig, apiKey: firebaseConfig.apiKey ? "PRESENT" : "MISSING" });
+
 // Initialize Firebase (Singleton Pattern)
 const app = getApps().length > 0 ? getApp() : initializeApp(firebaseConfig);
 
