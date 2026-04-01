@@ -14,15 +14,15 @@ export function usePosts(projectId?: string, userId?: string) {
       return;
     }
 
-    let q = query(
-      collection(db, "posts"),
-      orderBy("createdAt", "desc")
-    );
+    let baseQuery = collection(db, "posts");
+    let q;
 
     if (projectId) {
-      q = query(q, where("projectId", "==", projectId));
+      q = query(baseQuery, where("projectId", "==", projectId));
     } else if (userId) {
-      q = query(q, where("userId", "==", userId));
+      q = query(baseQuery, where("userId", "==", userId));
+    } else {
+      q = query(baseQuery);
     }
 
     const unsubscribe = onSnapshot(q, (snapshot) => {
@@ -30,6 +30,13 @@ export function usePosts(projectId?: string, userId?: string) {
         id: doc.id,
         ...doc.data()
       })) as Post[];
+      
+      data.sort((a, b) => {
+        const timeA = (a as any).createdAt?.toMillis?.() || (typeof (a as any).createdAt === 'number' ? (a as any).createdAt : 0);
+        const timeB = (b as any).createdAt?.toMillis?.() || (typeof (b as any).createdAt === 'number' ? (b as any).createdAt : 0);
+        return timeB - timeA;
+      });
+
       setPosts(data);
       setLoading(false);
     }, (error) => {

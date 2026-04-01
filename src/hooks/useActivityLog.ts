@@ -15,8 +15,7 @@ export function useActivityLog(userId: string | undefined) {
 
     const q = query(
       collection(db, "activity_logs"),
-      where("userId", "==", userId),
-      orderBy("createdAt", "desc")
+      where("userId", "==", userId)
     );
 
     const unsubscribe = onSnapshot(q, (snapshot) => {
@@ -24,6 +23,13 @@ export function useActivityLog(userId: string | undefined) {
         id: doc.id,
         ...doc.data()
       })) as ActivityLog[];
+
+      data.sort((a, b) => {
+        const timeA = (a as any).createdAt?.toMillis?.() || (typeof (a as any).createdAt === 'number' ? (a as any).createdAt : 0);
+        const timeB = (b as any).createdAt?.toMillis?.() || (typeof (b as any).createdAt === 'number' ? (b as any).createdAt : 0);
+        return timeB - timeA;
+      });
+
       setActivities(data);
       setLoading(false);
     }, (error) => {

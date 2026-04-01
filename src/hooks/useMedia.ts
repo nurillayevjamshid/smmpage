@@ -25,8 +25,7 @@ export function useMedia(userId: string | undefined) {
 
     const q = query(
       collection(db, "media_files"),
-      where("userId", "==", userId),
-      orderBy("createdAt", "desc")
+      where("userId", "==", userId)
     );
 
     const unsubscribe = onSnapshot(q, (snapshot) => {
@@ -34,6 +33,13 @@ export function useMedia(userId: string | undefined) {
         id: doc.id,
         ...doc.data()
       })) as MediaFile[];
+
+      data.sort((a, b) => {
+        const timeA = (a as any).createdAt?.toMillis?.() || (typeof (a as any).createdAt === 'number' ? (a as any).createdAt : 0);
+        const timeB = (b as any).createdAt?.toMillis?.() || (typeof (b as any).createdAt === 'number' ? (b as any).createdAt : 0);
+        return timeB - timeA;
+      });
+
       setMedia(data);
       setLoading(false);
     }, (error) => {
