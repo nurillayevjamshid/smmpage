@@ -5,7 +5,7 @@ import { Input } from "@/components/ui/Input";
 import { Card } from "@/components/ui/Card";
 import { toast } from "react-hot-toast";
 import { createProject } from "@/services/firestore";
-import { useAuth } from "@/hooks/useFirebase";
+import { useAuth } from "@/hooks/useAuth";
 
 interface CreateProjectModalProps {
   isOpen: boolean;

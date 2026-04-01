@@ -1,5 +1,5 @@
 import { Bell, Search, Menu, LogOut, User } from "lucide-react";
-import { useAuth } from "@/hooks/useFirebase";
+import { useAuth } from "@/hooks/useAuth";
 import { logout } from "@/services/auth";
 import { useNavigate } from "react-router-dom";
 import { toast } from "react-hot-toast";
