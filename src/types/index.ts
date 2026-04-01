@@ -51,3 +51,23 @@ export interface ActivityLog {
   status: 'success' | 'failed' | 'scheduled' | 'info';
   createdAt: number;
 }
+
+export interface PostTarget {
+  id: string;
+  postId: string;
+  projectId: string;
+  platform: 'telegram' | 'instagram';
+  accountId: string;
+  status: 'draft' | 'scheduled' | 'published' | 'failed';
+  error?: string;
+  createdAt: number;
+}
+
+export interface PostMedia {
+  id: string;
+  postId: string;
+  projectId: string;
+  url: string;
+  type: string;
+  createdAt: number;
+}

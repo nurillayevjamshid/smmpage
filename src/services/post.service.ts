@@ -43,41 +43,119 @@ export const postService = {
         shares: 0,
       });
 
+      const postId = docRef.id;
+
+      let mediaType = (file ? file.type : postData.mediaType) || 'image';
+      if (mediaUrl) {
+        await addDoc(collection(db, "post_media"), {
+          postId,
+          projectId,
+          url: mediaUrl,
+          type: mediaType,
+          createdAt: serverTimestamp()
+        });
+      }
+
+      const targetRefs: Record<string, any> = {};
+
+      const accounts = await socialAccountService.getAccountsByProject(projectId);
+      if (postData.platforms && postData.platforms.length > 0) {
+        for (const platform of postData.platforms) {
+          const accs = accounts.filter(a => a.platform === platform && a.status === "active");
+          for (const acc of accs) {
+            const tempRef = await addDoc(collection(db, "post_targets"), {
+              postId,
+              projectId,
+              platform,
+              accountId: acc.id,
+              status: postData.status || "draft",
+              createdAt: serverTimestamp()
+            });
+            targetRefs[acc.id] = tempRef;
+          }
+        }
+      }
+
+      const actionStatus = postData.status === 'published' ? 'success' : postData.status === 'scheduled' ? 'scheduled' : 'info';
+
       await logService.createLog({
         userId,
         projectId,
-        action: "post_creation",
+        action: `post_${postData.status || 'draft'}`,
         platform: postData.platforms?.[0] || "system",
-        status: "success"
+        status: actionStatus
       });
 
       // Auto-publish to Telegram if status is published
       if (postData.status === "published" && postData.platforms?.includes("telegram")) {
         try {
-          const accounts = await socialAccountService.getAccountsByProject(projectId);
           const tgAccounts = accounts.filter(a => a.platform === "telegram" && a.status === "active");
-          const isVideo = file ? file.type.startsWith('video/') : (postData as any).mediaType?.startsWith('video/');
+          const isVideo = mediaType.startsWith('video/');
           
           for (const tg of tgAccounts) {
             const target = tg.chatId || tg.accountId;
             if (tg.accessToken && target) {
-              if (mediaUrl) {
-                if (isVideo) {
-                  await telegramService.sendVideo(tg.accessToken, target, mediaUrl, postData.caption);
-                } else {
-                  await telegramService.sendPhoto(tg.accessToken, target, mediaUrl, postData.caption);
+              try {
+                let tgResponse;
+                if (mediaUrl) {
+                  if (isVideo) {
+                    tgResponse = await telegramService.sendVideo(tg.accessToken, target, mediaUrl, postData.caption);
+                  } else {
+                    tgResponse = await telegramService.sendPhoto(tg.accessToken, target, mediaUrl, postData.caption);
+                  }
+                } else if (postData.caption) {
+                  tgResponse = await telegramService.sendText(tg.accessToken, target, postData.caption);
                 }
-              } else if (postData.caption) {
-                await telegramService.sendText(tg.accessToken, target, postData.caption);
+
+                if (targetRefs[tg.id]) {
+                  await updateDoc(targetRefs[tg.id], {
+                    status: "published",
+                    response: tgResponse,
+                    publishedAt: serverTimestamp()
+                  });
+                }
+
+                await logService.createLog({
+                  userId,
+                  projectId,
+                  action: `Published to Telegram (${tg.accountName})`,
+                  platform: "telegram",
+                  status: "success"
+                });
+              } catch (publishErr: any) {
+                console.error("Telegram publish error:", publishErr);
+                
+                if (targetRefs[tg.id]) {
+                  await updateDoc(targetRefs[tg.id], {
+                    status: "failed",
+                    error: publishErr.message,
+                    failedAt: serverTimestamp()
+                  });
+                }
+
+                await logService.createLog({
+                  userId,
+                  projectId,
+                  action: `Failed to publish to Telegram (${tg.accountName})`,
+                  platform: "telegram",
+                  status: "failed"
+                });
               }
             }
           }
-        } catch (tgError) {
+        } catch (tgError: any) {
           console.error("Telegram publish error:", tgError);
+          await logService.createLog({
+            userId,
+            projectId,
+            action: `Telegram publish error: ${tgError.message}`,
+            platform: "telegram",
+            status: "failed"
+          });
         }
       }
 
-      return docRef.id;
+      return postId;
     } catch (error) {
       console.error("Error creating post:", error);
       throw error;
@@ -94,9 +172,9 @@ export const postService = {
       await logService.createLog({
         userId,
         projectId: postData.projectId || "",
-        action: "post_update",
+        action: `post_update${postData.status ? `_to_${postData.status}` : ''}`,
         platform: postData.platforms?.[0] || "system",
-        status: "success"
+        status: postData.status === 'published' ? 'success' : postData.status === 'scheduled' ? 'scheduled' : postData.status === 'failed' ? 'failed' : 'info'
       });
     } catch (error) {
       console.error("Error updating post:", error);
@@ -109,10 +187,10 @@ export const postService = {
       await deleteDoc(doc(db, "posts", postId));
       await logService.createLog({
         userId,
-        projectId: "",
+        projectId: "system", // default to system if unknown
         action: "post_deletion",
         platform: "system",
-        status: "success"
+        status: "info"
       });
     } catch (error) {
       console.error("Error deleting post:", error);

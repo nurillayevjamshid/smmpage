@@ -5,7 +5,7 @@ import { useProject } from "@/hooks/useProject";
 import { postService } from "@/services/post.service";
 import { Button } from "@/components/ui/Button";
 import { Card, CardContent } from "@/components/ui/Card";
-import { Image as ImageIcon, Send, ArrowLeft, LayoutGrid, CheckCircle2, MoreHorizontal, Heart, MessageCircle, Bookmark } from "lucide-react";
+import { Image as ImageIcon, Send, ArrowLeft, LayoutGrid, CheckCircle2, MoreHorizontal, Heart, MessageCircle, Bookmark, CalendarClock } from "lucide-react";
 import { cn } from "@/lib/utils";
 import toast from "react-hot-toast";
 import MediaLibraryModal from "@/components/media/MediaLibraryModal";
@@ -25,6 +25,7 @@ export default function ComposePost() {
   const [isPublishing, setIsPublishing] = useState(false);
   const [activePreview, setActivePreview] = useState<string>("instagram");
   const [isLibraryOpen, setIsLibraryOpen] = useState(false);
+  const [scheduleDate, setScheduleDate] = useState<string>("");
 
   // Load project platforms once project is loaded
   useEffect(() => {
@@ -48,7 +49,9 @@ export default function ComposePost() {
     }
   };
 
-  const handlePublish = async () => {
+  const isScheduled = !!scheduleDate;
+
+  const handleSave = async (status: 'published' | 'draft' | 'scheduled') => {
     if (!user) return;
     if (!caption && !mediaFile && !selectedMediaUrl) {
       toast.error("Please add some text or media");
@@ -60,12 +63,16 @@ export default function ComposePost() {
       await postService.createPost(user.id, id!, {
         caption,
         platforms,
-        status: "published",
+        status,
+        scheduledAt: status === 'scheduled' && scheduleDate ? new Date(scheduleDate) : undefined,
         mediaUrl: selectedMediaUrl || undefined,
         mediaType: selectedMediaType || undefined
       } as any, mediaFile || undefined);
       
-      toast.success("Content deployed successfully!");
+      if (status === 'published') toast.success("Content deployed successfully!");
+      else if (status === 'scheduled') toast.success("Content scheduled successfully!");
+      else toast.success("Draft saved successfully!");
+      
       setTimeout(() => navigate(`/projects/${id}`), 1000);
     } catch (error) {
       toast.error("Deployment failed");
@@ -99,11 +106,12 @@ export default function ComposePost() {
           </div>
         </div>
         <div className="flex items-center gap-2 w-full sm:w-auto">
-          <Button variant="secondary" className="flex-1 sm:flex-none h-11 px-5 rounded-xl text-xs sm:text-sm font-bold uppercase tracking-widest shadow-sm border-slate-100 mx-1">
+          <Button onClick={() => handleSave('draft')} disabled={isPublishing} variant="secondary" className="flex-1 sm:flex-none h-11 px-5 rounded-xl text-xs sm:text-sm font-bold uppercase tracking-widest shadow-sm border-slate-100 mx-1">
              Save Draft
           </Button>
-          <Button onClick={handlePublish} className="flex-1 sm:flex-none h-11 px-10 gap-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl text-xs sm:text-sm font-black shadow-lg shadow-indigo-100 active:scale-95 transition-all uppercase tracking-widest">
-            <Send size={18} strokeWidth={2.5} /> Deploy Now
+          <Button onClick={() => handleSave(isScheduled ? 'scheduled' : 'published')} disabled={isPublishing} className="flex-1 sm:flex-none h-11 px-10 gap-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl text-xs sm:text-sm font-black shadow-lg shadow-indigo-100 active:scale-95 transition-all uppercase tracking-widest">
+            {isScheduled ? <CalendarClock size={18} strokeWidth={2.5}/> : <Send size={18} strokeWidth={2.5} />}
+            {isScheduled ? "Schedule Now" : "Deploy Now"}
           </Button>
         </div>
       </div>
@@ -177,6 +185,24 @@ export default function ComposePost() {
                 </div>
               </div>
 
+              {/* Schedule Publication */}
+              <div className="space-y-4">
+                 <div className="flex items-center justify-between">
+                    <label className="text-[11px] font-extrabold text-slate-400 uppercase tracking-widest flex items-center gap-2 mb-1 px-1">
+                       <CalendarClock size={13} className="text-indigo-600" />
+                       Schedule Publication
+                    </label>
+                 </div>
+                 <div className="flex items-center gap-4">
+                   <input 
+                     type="datetime-local" 
+                     value={scheduleDate}
+                     onChange={(e) => setScheduleDate(e.target.value)}
+                     className="w-full bg-slate-50/50 border-2 border-slate-100 rounded-[1.5rem] px-6 py-4 focus:outline-none focus:bg-white focus:border-indigo-600 focus:ring-4 focus:ring-indigo-100 transition-all text-slate-900 font-bold"
+                   />
+                 </div>
+              </div>
+
               {/* Caption */}
               <div className="space-y-4">
                 <label className="text-[11px] font-extrabold text-slate-400 uppercase tracking-widest flex items-center gap-2 mb-1 px-1">
@@ -195,8 +221,10 @@ export default function ComposePost() {
 
           {/* Action Buttons for Mobile */}
           <div className="flex flex-col sm:flex-row items-center gap-4 pt-4 xl:hidden">
-             <Button variant="secondary" className="w-full h-14 rounded-2xl">Save Content Archive</Button>
-             <Button onClick={handlePublish} className="w-full h-16 bg-indigo-600 text-white rounded-2xl font-black">Finalize Deployment</Button>
+             <Button onClick={() => handleSave('draft')} disabled={isPublishing} variant="secondary" className="w-full h-14 rounded-2xl">Save Content Archive</Button>
+             <Button onClick={() => handleSave(isScheduled ? 'scheduled' : 'published')} disabled={isPublishing} className="w-full h-16 bg-indigo-600 text-white rounded-2xl font-black">
+               {isScheduled ? "Schedule Deployment" : "Finalize Deployment"}
+             </Button>
           </div>
         </div>
 
