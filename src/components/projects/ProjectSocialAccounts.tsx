@@ -30,7 +30,8 @@ export default function ProjectSocialAccounts({ projectId }: Props) {
     setIsTesting(true);
     setTestResult(null);
     try {
-      const result = await testConnection(formData.platform, formData.accessToken);
+      const targetChat = formData.chatId || formData.accountId;
+      const result = await testConnection(formData.platform, formData.accessToken, targetChat);
       setTestResult(result ? 'success' : 'error');
     } catch (e) {
       setTestResult('error');

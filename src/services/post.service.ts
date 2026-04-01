@@ -15,6 +15,8 @@ import {
 import { ref, uploadBytes, getDownloadURL } from "firebase/storage";
 import { Post } from "@/types";
 import { logService } from "./log.service";
+import { socialAccountService } from "./socialAccount.service";
+import { telegramService } from "./telegram.service";
 
 export const postService = {
   async createPost(userId: string, projectId: string, postData: Partial<Post>, file?: File): Promise<string> {
@@ -48,6 +50,32 @@ export const postService = {
         platform: postData.platforms?.[0] || "system",
         status: "success"
       });
+
+      // Auto-publish to Telegram if status is published
+      if (postData.status === "published" && postData.platforms?.includes("telegram")) {
+        try {
+          const accounts = await socialAccountService.getAccountsByProject(projectId);
+          const tgAccounts = accounts.filter(a => a.platform === "telegram" && a.status === "active");
+          const isVideo = file?.type.startsWith('video/');
+          
+          for (const tg of tgAccounts) {
+            const target = tg.chatId || tg.accountId;
+            if (tg.accessToken && target) {
+              if (mediaUrl) {
+                if (isVideo) {
+                  await telegramService.sendVideo(tg.accessToken, target, mediaUrl, postData.caption);
+                } else {
+                  await telegramService.sendPhoto(tg.accessToken, target, mediaUrl, postData.caption);
+                }
+              } else if (postData.caption) {
+                await telegramService.sendText(tg.accessToken, target, postData.caption);
+              }
+            }
+          }
+        } catch (tgError) {
+          console.error("Telegram publish error:", tgError);
+        }
+      }
 
       return docRef.id;
     } catch (error) {

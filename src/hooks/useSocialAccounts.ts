@@ -54,8 +54,8 @@ export function useSocialAccounts(projectId: string | undefined) {
     }
   };
 
-  const testConnection = async (platform: string, token: string) => {
-    return await socialAccountService.testConnection(platform, token);
+  const testConnection = async (platform: string, token: string, accountId?: string) => {
+    return await socialAccountService.testConnection(platform, token, accountId);
   };
 
   return {

@@ -11,6 +11,7 @@ import {
   serverTimestamp 
 } from "firebase/firestore";
 import { SocialAccount } from "@/types";
+import { telegramService } from "./telegram.service";
 
 export const socialAccountService = {
   async getAccountsByProject(projectId: string): Promise<SocialAccount[]> {
@@ -67,13 +68,11 @@ export const socialAccountService = {
     }
   },
 
-  async testConnection(platform: string, token: string): Promise<boolean> {
-    // Simulate connection testing
-    return new Promise((resolve) => {
-      setTimeout(() => {
-        // Here you would typically call your backend API to verify the token/connection
-        resolve(token.length > 5);
-      }, 1500);
-    });
+  async testConnection(platform: string, token: string, accountId?: string): Promise<boolean> {
+    if (platform === 'telegram') {
+      return await telegramService.testConnection(token, accountId);
+    }
+    // Default fallback mock
+    return new Promise((resolve) => resolve(token.length > 5));
   }
 };
