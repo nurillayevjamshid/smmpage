@@ -34,6 +34,7 @@ export interface SocialAccount {
 export interface Post {
   id: string;
   projectId: string;
+  userId: string;
   caption: string;
   status: 'draft' | 'scheduled' | 'published' | 'failed';
   scheduledAt?: number;
