@@ -8,11 +8,17 @@ export const projectService = {
     try {
       const q = query(
         collection(db, "projects"), 
-        where("ownerId", "==", ownerId),
-        orderBy("createdAt", "desc")
+        where("ownerId", "==", ownerId)
       );
       const snap = await getDocs(q);
-      return snap.docs.map(d => ({ id: d.id, ...d.data() } as Project));
+      const projects = snap.docs.map(d => ({ id: d.id, ...d.data() } as Project));
+      
+      // Sort client-side to prevent Firestore missing composite index error
+      return projects.sort((a, b) => {
+        const timeA = a.createdAt?.toMillis?.() || (typeof a.createdAt === 'number' ? a.createdAt : 0);
+        const timeB = b.createdAt?.toMillis?.() || (typeof b.createdAt === 'number' ? b.createdAt : 0);
+        return timeB - timeA;
+      });
     } catch (error) {
       console.error("Error fetching projects:", error);
       throw new Error("Failed to fetch projects");
