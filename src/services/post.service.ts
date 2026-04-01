@@ -17,6 +17,7 @@ import { Post } from "@/types";
 import { logService } from "./log.service";
 import { socialAccountService } from "./socialAccount.service";
 import { telegramService } from "./telegram.service";
+import { instagramService } from "./instagram.service";
 
 export const postService = {
   async createPost(userId: string, projectId: string, postData: Partial<Post>, file?: File): Promise<string> {
@@ -145,13 +146,76 @@ export const postService = {
           }
         } catch (tgError: any) {
           console.error("Telegram publish error:", tgError);
-          await logService.createLog({
-            userId,
-            projectId,
-            action: `Telegram publish error: ${tgError.message}`,
-            platform: "telegram",
-            status: "failed"
-          });
+        }
+      }
+
+      // Auto-publish to Instagram if status is published
+      if (postData.status === "published" && postData.platforms?.includes("instagram")) {
+        try {
+          const igAccounts = accounts.filter(a => a.platform === "instagram" && a.status === "active");
+          const isVideo = mediaType.startsWith('video/');
+          
+          for (const ig of igAccounts) {
+            // Instagram requires mediaUrl
+            if (ig.accessToken && ig.accountId && mediaUrl) {
+              try {
+                // Phase 1: Create Container
+                const containerId = await instagramService.createMediaContainer(
+                  ig.accountId,
+                  ig.accessToken,
+                  mediaUrl,
+                  postData.caption || "",
+                  isVideo ? 'video' : 'image'
+                );
+
+                // Phase 2: Wait if video, or just check once if image
+                const isReady = await instagramService.waitForContainer(containerId, ig.accessToken);
+                
+                if (!isReady) {
+                  throw new Error("Media container timed out or failed to process.");
+                }
+
+                // Phase 3: Publish
+                const igResponse = await instagramService.publishMedia(ig.accountId, ig.accessToken, containerId);
+
+                if (targetRefs[ig.id]) {
+                  await updateDoc(targetRefs[ig.id], {
+                    status: "published",
+                    response: { containerId, postId: igResponse },
+                    publishedAt: serverTimestamp()
+                  });
+                }
+
+                await logService.createLog({
+                  userId,
+                  projectId,
+                  action: `Published to Instagram (${ig.accountName})`,
+                  platform: "instagram",
+                  status: "success"
+                });
+              } catch (publishErr: any) {
+                console.error("Instagram publish error:", publishErr);
+                
+                if (targetRefs[ig.id]) {
+                  await updateDoc(targetRefs[ig.id], {
+                    status: "failed",
+                    error: publishErr.message,
+                    failedAt: serverTimestamp()
+                  });
+                }
+
+                await logService.createLog({
+                  userId,
+                  projectId,
+                  action: `Failed to publish to Instagram (${ig.accountName})`,
+                  platform: "instagram",
+                  status: "failed"
+                });
+              }
+            }
+          }
+        } catch (igError: any) {
+          console.error("Instagram publish generic error:", igError);
         }
       }
 
