@@ -1,20 +1,29 @@
-<div align="center">
-<img width="1200" height="475" alt="GHBanner" src="https://github.com/user-attachments/assets/0aa67016-6eaf-458a-adb2-6e31a0763ed6" />
-</div>
+# DAILY
 
-# Run and deploy your AI Studio app
+DAILY — mustaqil, tezkor va minimalist messenger platformasi uchun web MVP prototipi. Ushbu repository real-time messenger ekotizimining frontend asosiy tajribasini ko‘rsatadi: chatlar ro‘yxati, qidiruv, suhbat, xabar yuborish, profil va contact info paneli.
 
-This contains everything you need to run your app locally.
+## Ishga tushirish
 
-View your app in AI Studio: https://ai.studio/apps/fc67eedc-89f6-49b6-9a6f-748f0a35e5e6
+```bash
+npm install
+npm run dev
+```
 
-## Run Locally
+Production build va TypeScript tekshiruvi:
 
-**Prerequisites:**  Node.js
+```bash
+npm run lint
+npm run build
+```
 
+## Keyingi arxitektura yo‘nalishi
 
-1. Install dependencies:
-   `npm install`
-2. Set the `GEMINI_API_KEY` in [.env.local](.env.local) to your Gemini API key
-3. Run the app:
-   `npm run dev`
+To‘liq DAILY ekotizimi uchun backend alohida modular NestJS servislariga, PostgreSQL/Prisma ma’lumotlar qatlamiga, Redis presence/cache qatlamiga va Socket.IO real-time gateway’lariga ajratiladi. Flutter mobil ilovasi shu REST + WebSocket API’ni iste’mol qiladi. Ushbu frontend hozircha local mock data bilan ishlaydi va keyingi API integratsiyasi uchun UI qatlamini tayyorlaydi.
+
+## Asosiy texnologiyalar
+
+- React + TypeScript + Vite
+- Lucide icons
+- Responsive web layout
+- Light, premium DAILY branding
+- Mock chat state va local message sending
