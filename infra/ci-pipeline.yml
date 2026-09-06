@@ -1,0 +1,29 @@
+# Copy to .github/workflows/ci.yml after granting the GitHub token workflow permission.
+name: DAILY CI
+on: [pull_request, push]
+permissions: { contents: read, security-events: write }
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: { node-version: 22, cache: npm }
+      - run: npm ci --no-audit --no-fund
+      - run: npm run lint
+      - run: npm run build
+      - run: npm audit --audit-level=high
+      - run: docker build -f infra/Dockerfile -t daily:${{ github.sha }} .
+      - run: git diff --check
+  staging:
+    needs: validate
+    if: github.ref == 'refs/heads/main'
+    environment: staging
+    runs-on: ubuntu-latest
+    steps: [{ run: echo "Deploy immutable image, run readiness and smoke tests" }]
+  production:
+    needs: staging
+    if: github.ref == 'refs/heads/main'
+    environment: production
+    runs-on: ubuntu-latest
+    steps: [{ run: echo "Controlled production release with required reviewer" }]
