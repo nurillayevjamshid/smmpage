@@ -1,0 +1,57 @@
+services:
+  api:
+    build:
+      context: .
+      dockerfile: infra/Dockerfile
+    environment:
+      NODE_ENV: production
+      PORT: 8080
+      DATABASE_URL: postgresql://daily:daily@postgres:5432/daily
+      REDIS_URL: redis://redis:6379
+      QUEUE_URL: redis://redis:6379
+    ports: ["8080:8080"]
+    depends_on:
+      postgres: { condition: service_healthy }
+      redis: { condition: service_healthy }
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://localhost:8080/health"]
+      interval: 10s
+      timeout: 3s
+      retries: 5
+    read_only: true
+    security_opt: [no-new-privileges:true]
+  worker:
+    build:
+      context: .
+      dockerfile: infra/Dockerfile
+    command: ["node", "dist/worker.js"]
+    environment:
+      NODE_ENV: production
+      DATABASE_URL: postgresql://daily:daily@postgres:5432/daily
+      REDIS_URL: redis://redis:6379
+    depends_on: [postgres, redis]
+    security_opt: [no-new-privileges:true]
+  postgres:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_USER: daily
+      POSTGRES_PASSWORD: daily
+      POSTGRES_DB: daily
+    volumes: [daily_pg:/var/lib/postgresql/data]
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U daily -d daily"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+  redis:
+    image: redis:7-alpine
+    command: ["redis-server", "--appendonly", "yes"]
+    volumes: [daily_redis:/data]
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 3s
+      retries: 5
+volumes:
+  daily_pg:
+  daily_redis:
