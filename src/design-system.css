@@ -110,3 +110,13 @@ button:active { transform: scale(.98); }
 .premium-nav, .assistant-nav { color: var(--daily-primary) !important; }
 @media (prefers-reduced-motion: reduce) { *, *::before, *::after { scroll-behavior: auto !important; animation-duration: .01ms !important; transition-duration: .01ms !important; } }
 @media (max-width: 700px) { .app-shell { display: block !important; padding-bottom: 58px; }.sidebar { display: block !important; width: 100% !important; height: auto !important; min-height: 100vh; }.sidebar .brand-row { padding: 0 16px; }.sidebar .profile-mini, .sidebar .search-wrap, .sidebar .social-nav, .sidebar .section-label, .sidebar .chat-list, .sidebar .payment-nav-list, .sidebar .sidebar-footer { display: none !important; }.conversation, .social-workspace, .money-workspace, .assistant-workspace { width: 100% !important; min-height: calc(100vh - 58px); padding: 12px 16px 70px !important; }.conversation { display: flex !important; flex-direction: column; padding: 0 !important; }.conversation-header { padding: 0 12px; }.message-area { flex: 1; min-height: calc(100vh - 120px); }.details-panel { display: none !important; }.daily-bottom-nav { position: fixed; z-index: 100; right: 0; bottom: 0; left: 0; display: flex; justify-content: space-around; padding: 7px 6px max(7px, env(safe-area-inset-bottom)); border-top: 1px solid var(--daily-divider); background: var(--daily-card); box-shadow: none; }.daily-bottom-nav button { display: flex; flex-direction: column; align-items: center; gap: 3px; padding: 5px 9px; border-radius: 8px; color: var(--daily-muted); background: transparent; font-size: 8px; }.daily-bottom-nav button.active { color: var(--daily-primary); background: #dff3fc; }.plan-grid, .coins-layout, .creator-layout { display: flex !important; flex-direction: column; }.money-top, .assistant-top { align-items: flex-start; flex-direction: column; gap: 10px; }.ad-stats { grid-template-columns: 1fr 1fr; } }
+
+/* Mobile layout correction: keep compact top bar, reveal active workspace */
+@media (max-width: 700px) {
+  .app-shell { display: block !important; min-height: 100vh; padding-bottom: 58px; }
+  .sidebar { display: block !important; width: 100% !important; height: 51px !important; min-height: 51px !important; overflow: hidden; }
+  .sidebar .brand-row { height: 51px !important; padding: 0 16px; }
+  .conversation, .social-workspace, .money-workspace, .assistant-workspace { display: flex !important; width: 100% !important; min-height: calc(100vh - 109px) !important; height: auto !important; }
+  .conversation { flex-direction: column; }
+  .message-area { flex: 1; min-height: calc(100vh - 180px); }
+}
